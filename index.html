@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- OS-level theme hint (before JS loads) -->
+    <link rel="icon" type="image/svg+xml" href="/white_favicon.svg" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/dark_favicon.svg"  media="(prefers-color-scheme: dark)" />
+    <!-- Dynamic favicon swapped by inline script below -->
+    <link rel="icon" type="image/svg+xml" href="/white_favicon.svg" id="favicon-el" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KiloMail — Disposable email, done right.</title>
+    <meta name="description" content="Instant disposable inboxes at @kilolabs.space. No sign-up. Real-time SSE. Auto-expiry." />
+    <!-- Apply saved theme BEFORE React renders to prevent flash -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {}
+
+        function syncFavicon() {
+          var dark = document.documentElement.classList.contains("dark");
+          var el = document.getElementById("favicon-el");
+          if (el) el.href = dark ? "/dark_favicon.svg" : "/white_favicon.svg";
+        }
+        new MutationObserver(syncFavicon).observe(document.documentElement, {
+          attributes: true, attributeFilter: ["class"]
+        });
+        syncFavicon();
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

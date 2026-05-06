@@ -1,0 +1,10 @@
+name = "kilomail-email-worker"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+DOMAIN = "kilolabs.space"
+
+# Set secrets via:
+#   wrangler secret put UPSTASH_REDIS_REST_URL
+#   wrangler secret put UPSTASH_REDIS_REST_TOKEN

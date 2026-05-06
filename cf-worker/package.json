@@ -1,0 +1,19 @@
+{
+  "name": "kilomail-email-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "secret:redis-url": "wrangler secret put UPSTASH_REDIS_REST_URL",
+    "secret:redis-token": "wrangler secret put UPSTASH_REDIS_REST_TOKEN"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "postal-mime": "^2.7.3"
+  }
+}
