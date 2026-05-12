@@ -33,8 +33,8 @@ export default {
     const first = FIRST[Math.floor(Math.random() * FIRST.length)]
     const last  = LAST[Math.floor(Math.random()  * LAST.length)]
     const fmt   = Math.floor(Math.random() * 3)
-    if (fmt === 0) return `${first}.${last}`
-    if (fmt === 1) return `${first[0]}.${last}`
+    if (fmt === 0) return `${first}${last}`
+    if (fmt === 1) return `${first[0]}${last}`
     return `${first}${last[0].toUpperCase()}${last.slice(1)}`
   },
 
