@@ -1,0 +1,61 @@
+# ── CI — runs on every push and PR ────────────────────────────────────────
+# Checks: TypeScript (tsc), ESLint, Vite production build
+# No deploy — just verifies nothing is broken before merge.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]        # every branch push
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true  # cancel stale run when you push again on same branch
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Type-check · Lint · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. Source ──────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      # ── 2. Node.js ─────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # ── 3. Dependencies ────────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. TypeScript ──────────────────────────────────────────────────
+      # Checks both tsconfig.app.json (src/) and tsconfig.node.json (vite.config.ts)
+      - name: Type-check (tsc)
+        run: npx tsc --build --noEmit
+
+      # ── 5. Lint ────────────────────────────────────────────────────────
+      - name: ESLint
+        run: npm run lint
+
+      # ── 6. Build ───────────────────────────────────────────────────────
+      # Runs the same command Vercel runs: tsc -b && vite build
+      # Catches import errors, missing env references, bundle issues
+      - name: Production build
+        run: npm run build
+        env:
+          # Vite replaces import.meta.env.* at build time.
+          # These don't need real values — just must be set so the build
+          # doesn't crash on missing env guards. Actual secrets live in Vercel.
+          VITE_APP_ENV: ci

@@ -40,7 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
         try {
           const hashData = await redis.hgetall(inboxKey);
           const messages = Object.values(hashData ?? {})
-            .sort((a: any, b: any) => new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime());
+            .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
           const ids = messages.map((m: any) => m.id).join(",");
           const hash = `${messages.length}:${ids}`;
           if (hash !== lastHash) {
