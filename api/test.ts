@@ -65,20 +65,42 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
-  const message = {
-    id: crypto.randomUUID(),
+  const id = crypto.randomUUID();
+  const now = new Date();
+  const meta = {
+    id,
     from,
     subject,
-    text,
-    html: "",
-    receivedAt: new Date().toISOString(),
+    receivedAt: now.toISOString(),
+    expiresAt: now.getTime() + TTL * 1000,
+    read: false,
   };
 
   const key = `inbox:${to}`;
-  const existing = (await redis.get<typeof message[]>(key)) ?? [];
-  existing.push(message);
-  const trimmed = existing.slice(-MAX_MESSAGES);
-  await redis.set(key, trimmed, { ex: TTL });
+
+  // Write using the same hash schema as webhook.ts so the inbox reader can see it.
+  const pipe = redis.pipeline();
+  pipe.hset(key, { [id]: meta });
+  pipe.persist(key);
+  pipe.set(`body:${id}`, { text, html: "" }, { ex: TTL });
+  pipe.hlen(key);
+  const results = await pipe.exec();
+
+  const currentLen = results[3] as number ?? 0;
+  if (currentLen > MAX_MESSAGES) {
+    const hashData = await redis.hgetall<Record<string, typeof meta>>(key);
+    if (hashData) {
+      const sorted = Object.entries(hashData)
+        .map(([k, v]) => ({ id: k, receivedAt: v.receivedAt }))
+        .sort((a, b) => a.receivedAt.localeCompare(b.receivedAt));
+      const toDelete = sorted.slice(0, currentLen - MAX_MESSAGES).map(e => e.id);
+      const trimPipe = redis.pipeline();
+      toDelete.forEach(fid => trimPipe.hdel(key, fid));
+      await trimPipe.exec();
+    }
+  }
+
+  const message = { ...meta, text, html: "" };
 
   return new Response(
     JSON.stringify({ ok: true, injected: message, inboxKey: key }),

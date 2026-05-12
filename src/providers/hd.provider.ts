@@ -33,8 +33,12 @@ export default {
     const poll = async () => {
       if (!active) return
       try {
-        const msgs = await this.fetchInbox(email)
-        onUpdate(msgs)
+        const res = await fetch(
+          `${BASE}/api/providers/hd?action=inbox&email=${encodeURIComponent(email)}`
+        )
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json()
+        onUpdate(Array.isArray(data) ? data : [])
         onStatusChange(true)
       } catch {
         onStatusChange(false)

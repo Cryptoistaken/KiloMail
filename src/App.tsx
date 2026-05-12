@@ -1,39 +1,36 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react"
-import { cn } from "@/lib/utils"
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from "lucide-react"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
-import { Dock, DockIcon } from "@/components/ui/dock"
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { cn } from '@/lib/utils'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { Dock, DockIcon } from '@/components/ui/dock'
 
 const Landing = lazy(() =>
-  import("@/components/app/Landing").then(m => ({ default: m.Landing }))
+  import('@/app/views/Landing').then(m => ({ default: m.Landing }))
 )
-import { InboxView }   from "@/components/app/InboxView"
-import { MessageView } from "@/components/app/MessageView"
-import { HistoryView } from "@/components/app/HistoryView"
-import { FlickeringBg } from "@/components/app/FlickeringBg"
-import { KiloMailLogo } from "@/components/app/KiloMailLogo"
+import { InboxView }   from '@/app/views/InboxView'
+import { MessageView } from '@/app/views/MessageView'
+import { HistoryView } from '@/app/views/HistoryView'
+import { Background }  from '@/app/components/Background'
+import { Logo }        from '@/app/components/Logo'
 
 import {
-  BASE, EMAIL_KEY, persistInbox, markVisited, hasVisitedBefore,
+  persistInbox, markVisited, hasVisitedBefore,
   getPersistedEmail,
   type Panel, type MessageMeta, type MessageFull,
-} from "@/lib/types"
-import { saveToHistory, updateMessageCount } from "@/lib/history"
-import { useHashRoute, navigate } from "@/lib/router"
-import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from "@/providers/registry"
-
-// ── helpers ────────────────────────────────────────────────────────────────
+} from '@/lib/types'
+import { saveToHistory, updateMessageCount } from '@/lib/history'
+import { useHashRoute, navigate } from '@/hooks/useHashRoute'
+import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 
 function randomUsername(domain: string): string {
   try {
     const p = getProvider(`x@${domain}`)
     if (p.generateUsername) return p.generateUsername(domain)
   } catch {}
-  // fallback
-  const ADJS  = ["swift","quiet","clever","bright","bold","crisp","sleek","dark","prime","noble"]
-  const NOUNS = ["fox","wolf","hawk","bear","lynx","crane","raven","shark","viper","eagle"]
+  const ADJS  = ['swift','quiet','clever','bright','bold','crisp','sleek','dark','prime','noble']
+  const NOUNS = ['fox','wolf','hawk','bear','lynx','crane','raven','shark','viper','eagle']
   return `${ADJS[Math.floor(Math.random()*ADJS.length)]}${NOUNS[Math.floor(Math.random()*NOUNS.length)]}${Math.floor(Math.random()*900)+100}`
 }
 
@@ -50,7 +47,7 @@ function getOrCreateInbox(): string {
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim()
+  return html.replace(/<[^>]*>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim()
 }
 
 function extractCode(text: string, html: string): string | null {
@@ -63,15 +60,13 @@ function extractCode(text: string, html: string): string | null {
   for (const p of patterns) {
     const m = src.match(p)
     if (m?.[1]) return m[1]
-    if (m?.[0] && p.source === "\\b(\\d{4,8})\\b") return m[0]
+    if (m?.[0] && p.source === '\\b(\\d{4,8})\\b') return m[0]
   }
   return null
 }
 
-// ── Custom inbox modal ─────────────────────────────────────────────────────
-
 function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) => void; onClose: () => void }) {
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState('')
   const [domain, setDomain] = useState(DEFAULT_DOMAIN)
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -79,7 +74,7 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
   const submit = () => {
     const v = value.trim().toLowerCase()
     if (!v) return
-    onConfirm(v.includes("@") ? v : `${v}@${domain}`)
+    onConfirm(v.includes('@') ? v : `${v}@${domain}`)
   }
 
   return (
@@ -99,7 +94,7 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
           <input
             ref={inputRef} value={value}
             onChange={e => setValue(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") submit(); if (e.key === "Escape") onClose() }}
+            onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
             placeholder="username"
             className="flex-1 bg-transparent px-3 py-2.5 text-sm font-mono focus:outline-none min-w-0"
           />
@@ -118,14 +113,12 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
   )
 }
 
-// ── App ────────────────────────────────────────────────────────────────────
-
 export default function App() {
   const route = useHashRoute()
 
   const [email,      setEmail]      = useState(() => getOrCreateInbox())
   const [editing,    setEditing]    = useState(false)
-  const [editValue,  setEditValue]  = useState("")
+  const [editValue,  setEditValue]  = useState('')
   const [editDomain, setEditDomain] = useState(DEFAULT_DOMAIN)
   const [messages,   setMessages]   = useState<MessageMeta[]>([])
   const [loading,    setLoading]    = useState(false)
@@ -133,7 +126,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [fullMsg,    setFullMsg]    = useState<MessageFull | null>(null)
   const [msgLoading, setMsgLoading] = useState(false)
-  const [panel,      setPanel]      = useState<Panel>("inbox")
+  const [panel,      setPanel]      = useState<Panel>('inbox')
   const [copied,     setCopied]     = useState(false)
   const [newMenuOpen,  setNewMenuOpen]  = useState(false)
   const [customModal,  setCustomModal]  = useState(false)
@@ -162,13 +155,13 @@ export default function App() {
   }, [])
 
   const prefetchBodyCodes = useCallback(async (addr: string, msgs: MessageMeta[]) => {
-    const targets = msgs.filter(m => !/\b\d{4,8}\b/.test(m.subject ?? "") && !msgCache.current.has(m.id))
+    const targets = msgs.filter(m => !/\b\d{4,8}\b/.test(m.subject ?? '') && !msgCache.current.has(m.id))
     if (!targets.length) return
     const results: Record<string, string> = {}
     await Promise.all(targets.map(async m => {
       const full = await fetchFullMsg(addr, m)
       if (!full) return
-      const code = extractCode(full.text ?? "", full.html ?? "")
+      const code = extractCode(full.text ?? '', full.html ?? '')
       if (code) results[m.id] = code
     }))
     if (Object.keys(results).length) setBodyCodes(prev => ({ ...prev, ...results }))
@@ -185,21 +178,19 @@ export default function App() {
     autoCopy(next)
   }
 
-  // Close new-inbox menu on outside click
   useEffect(() => {
     if (!newMenuOpen) return
     const handler = (e: MouseEvent) => {
       if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setNewMenuOpen(false)
     }
-    document.addEventListener("mousedown", handler, true)
-    return () => document.removeEventListener("mousedown", handler, true)
+    document.addEventListener('mousedown', handler, true)
+    return () => document.removeEventListener('mousedown', handler, true)
   }, [newMenuOpen])
 
   const startStream = useCallback((addr: string) => {
     stopStream.current?.()
     stopStream.current = null
     setConnected(false)
-
     try {
       const provider = getProvider(addr)
       const stop = provider.streamInbox(
@@ -214,7 +205,7 @@ export default function App() {
       )
       stopStream.current = stop
     } catch (e) {
-      console.error("No provider for", addr, e)
+      console.error('No provider for', addr, e)
     }
   }, [])
 
@@ -226,22 +217,21 @@ export default function App() {
       setMessages(msgs)
       prefetchBodyCodes(addr, msgs)
     } catch (e) {
-      console.error("loadInbox failed", e)
+      console.error('loadInbox failed', e)
     } finally {
       setLoading(false)
     }
   }, [prefetchBodyCodes])
 
-  // Auto-copy on first /inbox visit
   const didAutoCopyRef = useRef(false)
   useEffect(() => {
-    if (route !== "/inbox" || didAutoCopyRef.current) return
+    if (route !== '/inbox' || didAutoCopyRef.current) return
     didAutoCopyRef.current = true
     autoCopy(email)
   }, [route]) // eslint-disable-line
 
   useEffect(() => {
-    if (route !== "/inbox") return
+    if (route !== '/inbox') return
     saveToHistory(email)
     loadInbox(email)
     startStream(email)
@@ -273,7 +263,7 @@ export default function App() {
 
   const copyEmail = () => { navigator.clipboard.writeText(email); setCopied(true); setTimeout(() => setCopied(false), 1500) }
   const newInbox  = (domain?: string) => resetInbox(randomInbox(domain ?? DOMAINS[Math.floor(Math.random() * DOMAINS.length)]))
-  const switchToEmail = (addr: string) => { resetInbox(addr); setPanel("inbox") }
+  const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
   const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? DEFAULT_DOMAIN
 
   const confirmEditRef = useRef(false)
@@ -282,29 +272,28 @@ export default function App() {
     confirmEditRef.current = true
     setTimeout(() => { confirmEditRef.current = false }, 100)
     const v = editValue.trim().toLowerCase(); if (!v) { setEditing(false); return }
-    const full = v.includes("@") ? v : `${v}@${editDomain}`
+    const full = v.includes('@') ? v : `${v}@${editDomain}`
     if (!DOMAINS.some(d => full.endsWith(`@${d}`))) { setEditing(false); return }
     resetInbox(full); setEditing(false)
   }
 
   const unread = messages.filter(m => !m.read).length
 
-  if (route === "/" || route === "")
+  if (route === '/' || route === '')
     return (
       <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background" />}>
-        <Landing onLaunch={() => { markVisited(); navigate("/inbox") }} />
+        <Landing onLaunch={() => { markVisited(); navigate('/inbox') }} />
       </Suspense>
     )
 
   return (
     <TooltipProvider>
       <div className="relative flex h-dvh flex-col bg-background text-foreground overflow-hidden">
-        <FlickeringBg />
+        <Background />
 
-        {/* ── Header ── */}
         <header className="relative z-10 flex items-center gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md sm:px-5">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
-            <KiloMailLogo variant="icon" className="h-7 w-7" />
+          <button onClick={() => navigate('/')} className="flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
+            <Logo variant="icon" className="h-7 w-7" />
             <span className="hidden sm:block text-sm font-semibold tracking-tight">KiloMail</span>
           </button>
 
@@ -314,7 +303,7 @@ export default function App() {
                 <div className="flex items-center h-8 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring/60">
                   <input autoFocus value={editValue}
                     onChange={e => setEditValue(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") { confirmEdit(); return } if (e.key === "Escape") setEditing(false) }}
+                    onKeyDown={e => { if (e.key === 'Enter') { confirmEdit(); return } if (e.key === 'Escape') setEditing(false) }}
                     placeholder="username"
                     className="h-full w-32 bg-transparent px-3 text-sm font-mono focus:outline-none"
                   />
@@ -331,10 +320,10 @@ export default function App() {
             ) : (
               <>
                 <button
-                  onClick={() => { setEditValue(email.split("@")[0]); setEditDomain(currentDomain); setEditing(true) }}
+                  onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
                   className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98]"
                 >
-                  <span className="max-w-[160px] truncate font-mono text-sm">{email.split("@")[0]}</span>
+                  <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
                   <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
                   <PencilLine className="h-3 w-3 text-muted-foreground shrink-0" />
                 </button>
@@ -351,11 +340,10 @@ export default function App() {
           </div>
         </header>
 
-        {/* ── Body ── */}
         <div className="relative z-10 flex flex-1 gap-3 overflow-hidden p-3">
           <aside className={cn(
-            "flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0",
-            (selectedId || panel !== "inbox") && "hidden md:flex"
+            'flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0',
+            (selectedId || panel !== 'inbox') && 'hidden md:flex'
           )}>
             <InboxView email={email} messages={messages} loading={loading} connected={connected}
               selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
@@ -364,17 +352,15 @@ export default function App() {
             />
           </aside>
           <main className={cn(
-            "flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm",
-            !selectedId && panel === "inbox" && "hidden md:flex"
+            'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
+            !selectedId && panel === 'inbox' && 'hidden md:flex'
           )}>
-            {panel === "inbox"   && <MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} />}
-            {panel === "history" && <HistoryView onSwitch={switchToEmail} onClear={() => {}} />}
+            {panel === 'inbox'   && <MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} />}
+            {panel === 'history' && <HistoryView onSwitch={switchToEmail} onClear={() => {}} />}
           </main>
         </div>
 
-        {/* ── Dock ── */}
         <footer className="relative z-10 flex items-center justify-center pb-3 pt-2">
-
           {newMenuOpen && (
             <div
               ref={newMenuRef}
@@ -383,7 +369,7 @@ export default function App() {
               <p className="px-3 pt-3 pb-1.5 text-xs font-semibold text-foreground">New random inbox on…</p>
               {DOMAINS.map(d => {
                 const provider = ALL_PROVIDERS.find(p => p.domains.includes(d))
-                const tag = provider?.id === "kilolabs" ? "own" : provider?.id === "edu" ? "edu" : "3rd party"
+                const tag = provider?.id === 'kilolabs' ? 'own' : provider?.id === 'edu' ? 'edu' : '3rd party'
                 return (
                   <button key={d}
                     className="flex w-full items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-muted transition-colors"
@@ -410,16 +396,15 @@ export default function App() {
 
           <Dock iconSize={40} iconMagnification={62} iconDistance={130}
             className="mt-0 h-[58px] gap-0.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
-
-            <DockIcon onClick={() => { setPanel("inbox"); setSelectedId(null); setFullMsg(null) }}>
+            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
               <Tooltip>
                 <TooltipTrigger>
-                  <div className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "relative size-10 rounded-full",
-                    panel === "inbox" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground")}>
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'relative size-10 rounded-full',
+                    panel === 'inbox' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}>
                     <Inbox className="size-4" />
                     {unread > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-white leading-none">
-                        {unread > 9 ? "9+" : unread}
+                        {unread > 9 ? '9+' : unread}
                       </span>
                     )}
                   </div>
@@ -428,11 +413,11 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setPanel("history")}>
+            <DockIcon onClick={() => setPanel('history')}>
               <Tooltip>
                 <TooltipTrigger>
-                  <div className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-10 rounded-full",
-                    panel === "history" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground")}>
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
+                    panel === 'history' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}>
                     <History className="size-4" />
                   </div>
                 </TooltipTrigger>
@@ -443,8 +428,8 @@ export default function App() {
             <DockIcon onClick={() => setNewMenuOpen(o => !o)}>
               <Tooltip>
                 <TooltipTrigger>
-                  <div className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-10 rounded-full",
-                    newMenuOpen && "bg-muted text-foreground")}>
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
+                    newMenuOpen && 'bg-muted text-foreground')}>
                     <Plus className="size-4" />
                   </div>
                 </TooltipTrigger>
@@ -455,14 +440,13 @@ export default function App() {
             <DockIcon>
               <Tooltip>
                 <TooltipTrigger>
-                  <div className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-10 rounded-full")}>
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full')}>
                     <AnimatedThemeToggler asDiv className="flex h-full w-full items-center justify-center text-inherit" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">Toggle theme</TooltipContent>
               </Tooltip>
             </DockIcon>
-
           </Dock>
         </footer>
 

@@ -13,17 +13,18 @@ export interface MessageMeta {
 }
 
 export interface MessageFull extends MessageMeta {
-  read: true
+  read: boolean
   text: string
   html: string
 }
 
-export type Panel = "inbox" | "history" | "docs"
+export type Panel = "inbox" | "history"
 
 // ── App-level constants ────────────────────────────────────────────────────
 
-export const BASE       = "https://kilomail.vercel.app"
-export const EMAIL_KEY  = "kilomail_current_email"
+export const BASE        = "https://kilomail.vercel.app"
+export const DOMAIN      = "kilolabs.space"
+export const EMAIL_KEY   = "kilomail_current_email"
 export const VISITED_KEY = "kilomail_visited"
 
 export function hasVisitedBefore(): boolean {

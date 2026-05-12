@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react"
-import { Trash2, X, Mail, ChevronLeft, AlignLeft, Code2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
-import type { MessageFull } from "@/lib/types"
+import { useState, useEffect, useRef } from 'react'
+import { Trash2, X, Mail, ChevronLeft, AlignLeft, Code2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
+import type { MessageFull } from '@/lib/types'
 
 interface MessageViewProps {
   message: MessageFull | null
@@ -13,17 +13,16 @@ interface MessageViewProps {
 }
 
 export function MessageView({ message, loading, onClose, onDelete }: MessageViewProps) {
-  const [view, setView] = useState<"html" | "text">("html")
+  const [view, setView] = useState<'html' | 'text'>('html')
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => { setView("html") }, [message?.id])
+  useEffect(() => { setView('html') }, [message?.id])
 
   useEffect(() => {
-    if (message?.html && iframeRef.current && view === "html") {
+    if (message?.html && iframeRef.current && view === 'html') {
       const doc = iframeRef.current.contentDocument
       if (!doc) return
       doc.open()
-      // Inject a style reset so the iframe respects the app's light/dark context
       doc.write(`<!doctype html><html><head><style>
         html,body{margin:0;padding:12px 16px;font-family:sans-serif;font-size:14px;
           background:#fff;color:#111;word-break:break-word;line-height:1.6}
@@ -66,10 +65,8 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <div className="border-b border-border px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          {/* Back button (mobile only) + sender avatar + meta */}
           <div className="flex min-w-0 items-center gap-3">
             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 md:hidden" onClick={onClose}>
               <ChevronLeft className="h-4 w-4" />
@@ -78,17 +75,15 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{message.subject || "(no subject)"}</p>
+              <p className="truncate text-sm font-semibold">{message.subject || '(no subject)'}</p>
               <p className="truncate text-xs text-muted-foreground">{message.from}</p>
             </div>
           </div>
-
-          {/* Actions */}
           <div className="flex shrink-0 items-center gap-0.5">
             <span className="mr-2 hidden text-[11px] text-muted-foreground sm:block">
               {new Date(message.receivedAt).toLocaleString(undefined, {
-                month: "short", day: "numeric",
-                hour: "2-digit", minute: "2-digit",
+                month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit',
               })}
             </span>
             <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={onDelete}>
@@ -99,26 +94,24 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
             </Button>
           </div>
         </div>
-
-        {/* HTML / Plain toggle — only when both exist */}
         {message.html && message.text && (
           <div className="mt-2.5 flex items-center gap-1">
             <button
-              onClick={() => setView("html")}
+              onClick={() => setView('html')}
               className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
-                view === "html"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                view === 'html'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <Code2 className="h-3 w-3" /> HTML
             </button>
             <button
-              onClick={() => setView("text")}
+              onClick={() => setView('text')}
               className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
-                view === "text"
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                view === 'text'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <AlignLeft className="h-3 w-3" /> Plain text
@@ -126,10 +119,8 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
           </div>
         )}
       </div>
-
-      {/* Body */}
       <div className="flex-1 overflow-auto">
-        {message.html && view === "html"
+        {message.html && view === 'html'
           ? <iframe
               ref={iframeRef}
               sandbox="allow-same-origin"
@@ -137,7 +128,7 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
               title="Email body"
             />
           : <pre className="p-5 font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-              {message.text || "(empty body)"}
+              {message.text || '(empty body)'}
             </pre>
         }
       </div>
