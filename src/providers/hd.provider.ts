@@ -7,7 +7,7 @@
 // Names:     random adjective+noun+number (same as kilolabs)
 
 import type { ProviderPlugin } from "./types"
-import type { MessageMeta, MessageFull } from "@/lib/types"
+import type { MessageFull } from "@/lib/types"
 
 const BASE = "https://kilomail.vercel.app"
 const POLL_MS = 5000

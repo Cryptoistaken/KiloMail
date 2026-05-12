@@ -16,7 +16,7 @@ import { Background }  from '@/app/components/Background'
 import { Logo }        from '@/app/components/Logo'
 
 import {
-  persistInbox, markVisited, hasVisitedBefore,
+  persistInbox, markVisited,
   getPersistedEmail,
   type Panel, type MessageMeta, type MessageFull,
 } from '@/lib/types'
