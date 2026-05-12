@@ -21,7 +21,7 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
 }
 
-const EDU_POLL_MS = 500
+const EDU_POLL_MS = 2000
 const EDU_MAX_MS  = 295_000
 
 export default async function handler(req: Request): Promise<Response> {
@@ -118,13 +118,13 @@ const ensuredCache = new Set<string>()
 
 async function ensureAccount(email: string): Promise<void> {
   if (ensuredCache.has(email)) return
+  ensuredCache.add(email)
   try {
-    const r = await fetch(`${EDU_BASE}/availability?email=${encodeURIComponent(email)}`, { headers: { accept: "application/json" } })
-    const d = await r.json() as { isMailAvailable: boolean; isMailAlreadyCreated: boolean }
-    if (!d.isMailAlreadyCreated && d.isMailAvailable) {
-      await fetch(`${EDU_BASE}/guest`, { method: "POST", headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify({ email }) })
-    }
-    ensuredCache.add(email)
+    await fetch(`${EDU_BASE}/guest`, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
   } catch {}
 }
 

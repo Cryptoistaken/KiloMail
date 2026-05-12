@@ -6,7 +6,7 @@ const redis = new Redis({
 });
 
 const DOMAIN = "kilolabs.space";
-const CHECK_INTERVAL = 800;
+const CHECK_INTERVAL = 2000;
 const MAX_DURATION = 295_000;
 
 export default async function handler(req: Request): Promise<Response> {
@@ -41,29 +41,19 @@ export default async function handler(req: Request): Promise<Response> {
           const hashData = await redis.hgetall(inboxKey);
           const messages = Object.values(hashData ?? {})
             .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
-          const ids = messages.map((m: any) => m.id).join(",");
-          const hash = `${messages.length}:${ids}`;
+          const hash = `${messages.length}:${messages.map((m: any) => m.id).join(",")}`;
           if (hash !== lastHash) {
-            // Fetch bodies for all messages in one pipeline
-            const bodies: Record<string, { text: string; html: string }> = {};
-            if (messages.length > 0) {
-              const pipe = redis.pipeline();
-              messages.forEach((m: any) => pipe.get(`body:${m.id}`));
-              const results = await pipe.exec();
-              messages.forEach((m: any, i: number) => {
-                const b = results[i] as { text?: string; html?: string } | null;
-                bodies[m.id] = { text: b?.text ?? "", html: b?.html ?? "" };
-              });
-            }
             lastHash = hash;
             const now = Date.now();
             send({
               type: "update",
               messages: messages.map((m: any) => ({
-                ...m,
-                timeAgo: relativeTime(m.receivedAt, now),
-                html: bodies[m.id]?.html ?? "",
-                text: bodies[m.id]?.text ?? "",
+                id:         m.id,
+                from:       m.from,
+                subject:    m.subject,
+                receivedAt: m.receivedAt,
+                read:       m.read ?? false,
+                timeAgo:    relativeTime(m.receivedAt, now),
               })),
             });
           }

@@ -50,7 +50,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const messages = live
-    .sort((a, b) => new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime())
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .map((m) => ({
       id:         m.id,
       from:       m.from,
