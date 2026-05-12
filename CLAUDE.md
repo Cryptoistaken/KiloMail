@@ -29,6 +29,7 @@ src/
     history.ts                   localStorage inbox history
     router.ts                    re-exports useHashRoute + navigate
     utils.ts                     cn() only
+    names.ts                     shared name arrays + generateUsername() — used by all providers
   hooks/
     useHashRoute.ts              hash router hook + navigate()
     useTheme.ts                  watches <html class="dark"> mutations
@@ -36,7 +37,6 @@ src/
     types.ts                     ProviderPlugin interface — do not change without updating all providers
     registry.ts                  auto-discovery via import.meta.glob — NEVER EDIT
     kilolabs.provider.ts         kilolabs.space | SSE | delete supported
-    hd.provider.ts               tenwmail.com, clowtmail.com | polling 5 s | no delete
     edu.provider.ts              iunp.edu.rs, warsawuni.edu.pl | SSE | no delete
   app/
     views/
@@ -136,7 +136,7 @@ interface ProviderPlugin {
   fetchMessage(email: string, meta: MessageMeta): Promise<MessageFull | null>
 
   deleteMessage?(email: string, id: string): Promise<void>  // undefined = UI hides delete button
-  generateUsername?(domain: string): string                 // undefined = adjective+noun+number fallback
+  generateUsername?(domain: string): string                 // undefined = falls back to shared generateUsername() from @/lib/names
 }
 ```
 
@@ -150,6 +150,13 @@ interface ProviderPlugin {
   ```
 - Never use `this.fetchInbox()` inside `streamInbox` — the object literal has no `this` binding when used with `satisfies`. Inline the fetch instead.
 - `deleteMessage` being `undefined` → App.tsx removes the message from local state only, no API call
+- **Username generation — do NOT write your own name arrays in a new provider.** Import and call `generateUsername` from `@/lib/names` instead:
+  ```ts
+  import { generateUsername } from "@/lib/names"
+  // then in the provider object:
+  generateUsername() { return generateUsername() },
+  ```
+  Only skip `generateUsername` entirely if you want the shared generator to be used automatically via the App.tsx fallback (same result). Adding names belongs in `src/lib/names.ts`, not in provider files.
 
 ### Complete worked example
 
@@ -160,6 +167,7 @@ Replace `myservice` / `myservice.com` throughout. This compiles and satisfies th
 ```ts
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
+import { generateUsername } from "@/lib/names"
 
 const BASE     = "https://kilomail.vercel.app"
 const POLL_MS  = 5_000
@@ -178,11 +186,7 @@ export default {
   domains: ["myservice.com"],
   enabled: true,
 
-  generateUsername(_domain) {
-    const adjs  = ["swift", "quiet", "bold", "crisp", "sleek"]
-    const nouns = ["fox", "wolf", "hawk", "lynx", "crane"]
-    return `${adjs[Math.floor(Math.random() * adjs.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${Math.floor(Math.random() * 900) + 100}`
-  },
+  generateUsername(_domain) { return generateUsername() },
 
   async fetchInbox(email) {
     const res = await fetch(

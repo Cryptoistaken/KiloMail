@@ -8,20 +8,9 @@
 
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
+import { generateUsername } from "@/lib/names"
 
 const BASE = "https://kilomail.vercel.app"
-
-const FIRST = [
-  "james","john","robert","michael","william","david","richard","joseph","thomas","charles",
-  "mary","patricia","jennifer","linda","barbara","elizabeth","susan","jessica","sarah","karen",
-  "emily","daniel","matthew","andrew","joshua","christopher","ethan","alexander","ryan","kevin",
-  "emma","olivia","sophia","isabella","mia","charlotte","amelia","harper","evelyn","abigail",
-]
-const LAST = [
-  "smith","johnson","williams","brown","jones","garcia","miller","davis","wilson","taylor",
-  "anderson","thomas","jackson","white","harris","martin","thompson","robinson","clark","lewis",
-  "walker","hall","allen","young","king","wright","scott","green","baker","adams",
-]
 
 export default {
   id:      "edu",
@@ -29,14 +18,7 @@ export default {
   domains: ["iunp.edu.rs", "warsawuni.edu.pl"],
   enabled: true,
 
-  generateUsername() {
-    const first = FIRST[Math.floor(Math.random() * FIRST.length)]
-    const last  = LAST[Math.floor(Math.random()  * LAST.length)]
-    const fmt   = Math.floor(Math.random() * 3)
-    if (fmt === 0) return `${first}${last}`
-    if (fmt === 1) return `${first[0]}${last}`
-    return `${first}${last[0].toUpperCase()}${last.slice(1)}`
-  },
+  generateUsername() { return generateUsername() },
 
   async fetchInbox(email) {
     const res = await fetch(

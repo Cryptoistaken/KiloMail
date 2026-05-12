@@ -8,11 +8,9 @@
 
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
+import { generateUsername } from "@/lib/names"
 
 const BASE = "https://kilomail.vercel.app"
-
-const ADJS  = ["swift","quiet","clever","bright","bold","crisp","sleek","dark","prime","noble"]
-const NOUNS = ["fox","wolf","hawk","bear","lynx","crane","raven","shark","viper","eagle"]
 
 export default {
   id:      "kilolabs",
@@ -20,11 +18,7 @@ export default {
   domains: ["kilolabs.space"],
   enabled: true,
 
-  generateUsername() {
-    const a = ADJS[Math.floor(Math.random()  * ADJS.length)]
-    const n = NOUNS[Math.floor(Math.random() * NOUNS.length)]
-    return `${a}${n}${Math.floor(Math.random() * 900) + 100}`
-  },
+  generateUsername() { return generateUsername() },
 
   async fetchInbox(email) {
     const res = await fetch(`${BASE}/api/inbox/${encodeURIComponent(email)}`)

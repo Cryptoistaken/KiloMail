@@ -22,6 +22,7 @@ import {
 } from '@/lib/types'
 import { saveToHistory, updateMessageCount } from '@/lib/history'
 import { useHashRoute, navigate } from '@/hooks/useHashRoute'
+import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 
 function randomUsername(domain: string): string {
@@ -29,9 +30,7 @@ function randomUsername(domain: string): string {
     const p = getProvider(`x@${domain}`)
     if (p.generateUsername) return p.generateUsername(domain)
   } catch {}
-  const ADJS  = ['swift','quiet','clever','bright','bold','crisp','sleek','dark','prime','noble']
-  const NOUNS = ['fox','wolf','hawk','bear','lynx','crane','raven','shark','viper','eagle']
-  return `${ADJS[Math.floor(Math.random()*ADJS.length)]}${NOUNS[Math.floor(Math.random()*NOUNS.length)]}${Math.floor(Math.random()*900)+100}`
+  return generateUsername()
 }
 
 function randomInbox(domain: string = DEFAULT_DOMAIN): string {
