@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils"
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number
-  /** Set to true when this toggler is already inside a <button> (e.g. DockIcon).
-   *  Renders a <div> instead of <button> to avoid invalid nested interactive elements. */
   asDiv?: boolean
 }
 

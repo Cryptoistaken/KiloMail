@@ -39,7 +39,6 @@ export function DottedMap({
 
   const processedMarkers = addMarkers(markers)
 
-  // Compute stagger helpers in a single, simple pass
   const { xStep, yToRowIndex } = React.useMemo(() => {
     const sorted = [...points].sort((a, b) => a.y - b.y || a.x - b.x)
     const rowMap = new Map<number, number>()
@@ -49,7 +48,6 @@ export function DottedMap({
 
     for (const p of sorted) {
       if (p.y !== prevY) {
-        // new row
         prevY = p.y
         prevXInRow = Number.NaN
         if (!rowMap.has(p.y)) rowMap.set(p.y, rowMap.size)

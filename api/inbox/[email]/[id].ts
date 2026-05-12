@@ -40,9 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const inboxKey = `inbox:${email}`;
 
-  // ── GET — return full body; read state tracked client-side ────────────────
   if (req.method === "GET") {
-    // Pipeline meta + body — 1 round-trip
     const results = await redis.pipeline()
       .hget<MessageMeta>(inboxKey, messageId)
       .get<MessageBody>(`body:${messageId}`)
@@ -66,7 +64,6 @@ export default async function handler(req: Request): Promise<Response> {
     }), { headers: CORS });
   }
 
-  // ── DELETE — HDEL + DEL body in 1 round-trip, no GET needed ──────────────
   if (req.method === "DELETE") {
     const results = await redis.pipeline()
       .hget<MessageMeta>(inboxKey, messageId)

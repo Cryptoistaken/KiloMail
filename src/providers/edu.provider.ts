@@ -1,11 +1,3 @@
-// ── EDU provider ──────────────────────────────────────────────────────────
-//
-// Domains:   iunp.edu.rs, warsawuni.edu.pl
-// Backend:   getedumail.com API, proxied via api/providers/edu.ts
-// Transport: SSE  (api/providers/edu?action=stream)
-// Delete:    NO  (getedumail has no delete API)
-// Names:     realistic academic format: firstname.lastname / f.lastname / firstnameLastname
-
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
@@ -52,5 +44,4 @@ export default {
     return res.json() as Promise<MessageFull>
   },
 
-  // No deleteMessage — getedumail has no delete API.
 } satisfies ProviderPlugin

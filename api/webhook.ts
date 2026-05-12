@@ -6,7 +6,7 @@ const redis = new Redis({
 });
 
 const DOMAIN = "kilolabs.space";
-const TTL = 2592000; // 30 days in seconds
+const TTL = 2592000;
 const MAX_MESSAGES = 50;
 
 interface IncomingPayload {
@@ -22,7 +22,7 @@ interface MessageMeta {
   from: string;
   subject: string;
   receivedAt: string;
-  expiresAt: number;  // Unix ms — absolute expiry
+  expiresAt: number;
   read: boolean;
 }
 
@@ -48,18 +48,15 @@ export default async function handler(req: Request): Promise<Response> {
     from: body.from ?? "",
     subject: body.subject ?? "(no subject)",
     receivedAt: now.toISOString(),
-    expiresAt: now.getTime() + TTL * 1000,  // absolute expiry ms — used to filter on read
+    expiresAt: now.getTime() + TTL * 1000,
     read: false,
   };
 
   const inboxKey = `inbox:${address}`;
 
-  // Pipeline: HSET meta + PERSIST (never auto-delete the index) + SET body with per-message TTL + HLEN
-  // The inbox hash persists forever; each body blob expires after 30 days independently.
-  // Old messages whose body has expired are filtered out on read.
   const pipe = redis.pipeline();
   pipe.hset(inboxKey, { [id]: meta });
-  pipe.persist(inboxKey);           // ensure inbox hash never auto-expires
+  pipe.persist(inboxKey);
   pipe.set(`body:${id}`, { text: body.text ?? "", html: body.html ?? "" }, { ex: TTL });
   pipe.hlen(inboxKey);
   const results = await pipe.exec();

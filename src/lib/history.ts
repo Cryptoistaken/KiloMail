@@ -1,13 +1,11 @@
-// ── Email history (localStorage) ───────────────────────────────────────────
-
 export const HISTORY_KEY = "kilomail_history"
 export const MAX_HISTORY = 50
 
 export interface HistoryEntry {
   email: string
   usedAt: number
-  count: number        // times the inbox was opened/used
-  messageCount: number // total messages ever received (updated from SSE stream)
+  count: number
+  messageCount: number
 }
 
 export function loadHistory(): HistoryEntry[] {
@@ -31,7 +29,6 @@ export function saveToHistory(email: string) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed))
 }
 
-/** Update the stored message count for a given email (called whenever SSE pushes an update). */
 export function updateMessageCount(email: string, count: number) {
   const hist = loadHistory()
   const idx = hist.findIndex(e => e.email === email)

@@ -15,7 +15,7 @@ interface MessageMeta {
   from: string;
   subject: string;
   receivedAt: string;
-  expiresAt?: number;  // Unix ms — absent on old messages; treat as non-expired
+  expiresAt?: number;
   read: boolean;
 }
 
@@ -38,11 +38,9 @@ export default async function handler(req: Request): Promise<Response> {
   const now = Date.now();
   const all = Object.values(hashData as Record<string, MessageMeta> ?? {});
 
-  // Separate live vs expired messages
   const live = all.filter(m => !m.expiresAt || m.expiresAt > now);
   const expired = all.filter(m => m.expiresAt && m.expiresAt <= now);
 
-  // Prune expired entries from the hash in the background (fire-and-forget)
   if (expired.length > 0) {
     const pipe = redis.pipeline();
     expired.forEach(m => pipe.hdel(inboxKey, m.id));

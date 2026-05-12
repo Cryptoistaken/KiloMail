@@ -1,12 +1,3 @@
-/**
- * Proxy for EDU domains: iunp.edu.rs, warsawuni.edu.pl
- * Route: /api/providers/edu
- *
- * ?action=inbox&email=          → message list (creates inbox if needed)
- * ?action=stream&email=         → SSE stream
- * ?action=read&email=&uid=      → full message body
- */
-
 const EDU_BASE = "https://api.getedumail.com/getedumail/emails"
 
 const EDU_DOMAINS: ReadonlySet<string> = new Set([
@@ -35,7 +26,6 @@ export default async function handler(req: Request): Promise<Response> {
   const domain = email.split("@")[1] ?? ""
   if (!EDU_DOMAINS.has(domain)) return json({ error: "Not an EDU domain" }, 400)
 
-  // ── SSE stream ─────────────────────────────────────────────────────────
   if (action === "stream") {
     await ensureAccount(email)
     const encoder = new TextEncoder()
@@ -78,7 +68,6 @@ export default async function handler(req: Request): Promise<Response> {
     })
   }
 
-  // ── inbox list ─────────────────────────────────────────────────────────
   if (action === "inbox") {
     await ensureAccount(email)
     const r = await fetch(`${EDU_BASE}/${encodeURIComponent(email)}/list?page=1`, { headers: { accept: "application/json" } })
@@ -88,7 +77,6 @@ export default async function handler(req: Request): Promise<Response> {
     return json((d.emails ?? []).map(m => mapEmail(m, now)))
   }
 
-  // ── read single message ────────────────────────────────────────────────
   if (action === "read") {
     const uid = url.searchParams.get("uid") ?? ""
     if (!uid) return json({ error: "Missing uid" }, 400)
@@ -103,8 +91,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   return json({ error: "Unknown action" }, 400)
 }
-
-// ── helpers ────────────────────────────────────────────────────────────────
 
 interface EduEmail {
   uid: number

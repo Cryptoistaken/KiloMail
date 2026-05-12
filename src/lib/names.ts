@@ -1,8 +1,3 @@
-// ── Shared name generator ─────────────────────────────────────────────────
-//
-// Used by all providers via generateUsername() and the App.tsx fallback.
-// New providers do NOT need their own name arrays — just call generateUsername().
-
 const FIRST = [
   "james","john","robert","michael","william","david","richard","joseph","thomas","charles",
   "mary","patricia","jennifer","linda","barbara","elizabeth","susan","jessica","sarah","karen",
@@ -69,17 +64,10 @@ const LAST = [
   "novak","dvorak","horak","blazek","cerny","prochazka","kolar","pokorny","vesely","havlicek",
 ]
 
-/** Pick a random element from an array. */
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-/**
- * Generate a realistic human-style username.
- * Format varies randomly across 3 patterns; ~40% chance of a numeric suffix (2–4 digits).
- *
- * Examples: jamessmith, jwatson, EmilyKumar, priyapatel83, oNovak2041
- */
 export function generateUsername(): string {
   const first = pick(FIRST)
   const last  = pick(LAST)
@@ -90,7 +78,6 @@ export function generateUsername(): string {
   else if (fmt === 1) base = `${first[0]}${last}`
   else                base = `${first}${last[0].toUpperCase()}${last.slice(1)}`
 
-  // ~40% chance of numeric suffix (2–4 digits)
   if (Math.random() < 0.4) {
     const len = Math.random() < 0.5 ? 2 : Math.random() < 0.6 ? 3 : 4
     const min = Math.pow(10, len - 1)

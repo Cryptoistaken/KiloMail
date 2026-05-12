@@ -1,12 +1,3 @@
-/**
- * POST /api/test
- * Injects a fake email directly into Redis — bypasses the CF Worker entirely.
- * Only works when TEST_MODE env var is set to "1".
- *
- * Body (all optional, defaults provided):
- *   { to?: string, from?: string, subject?: string, text?: string }
- */
-
 import { Redis } from "@upstash/redis";
 
 const redis = new Redis({
@@ -15,7 +6,7 @@ const redis = new Redis({
 });
 
 const DOMAIN = "kilolabs.space";
-const TTL = 2592000; // 30 days in seconds
+const TTL = 2592000;
 const MAX_MESSAGES = 50;
 
 const CORS = {
@@ -49,9 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
   let body: Record<string, string> = {};
   try {
     body = await req.json();
-  } catch {
-    // use defaults
-  }
+  } catch {}
 
   const to = (body.to ?? `test@${DOMAIN}`).toLowerCase().trim();
   const from = body.from ?? "test-sender@gmail.com";
@@ -78,7 +67,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   const key = `inbox:${to}`;
 
-  // Write using the same hash schema as webhook.ts so the inbox reader can see it.
   const pipe = redis.pipeline();
   pipe.hset(key, { [id]: meta });
   pipe.persist(key);

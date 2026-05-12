@@ -3,7 +3,7 @@ import PostalMime from "postal-mime";
 export interface Env {
   UPSTASH_REDIS_REST_URL: string;
   UPSTASH_REDIS_REST_TOKEN: string;
-  DOMAIN: string; // kilolabs.space only — HD domains use the hotmail9 HTTP API
+  DOMAIN: string;
 }
 
 const TTL = 600;
@@ -28,7 +28,6 @@ export default {
     const body = JSON.stringify({ text: parsed.text ?? "", html: parsed.html ?? "" });
     const inboxKey = `inbox:${to}`;
 
-    // Single HTTP round-trip: HSET meta + EXPIRE + SET body + HLEN for trim check
     const pipeRes = await upstash(env, "pipeline", [
       ["HSET", inboxKey, id, meta],
       ["EXPIRE", inboxKey, String(TTL)],

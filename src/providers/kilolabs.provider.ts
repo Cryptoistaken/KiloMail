@@ -1,11 +1,3 @@
-// ── KiloLabs provider ─────────────────────────────────────────────────────
-//
-// Own domain: kilolabs.space
-// Backend:    Cloudflare Worker → Upstash Redis
-// Transport:  SSE  (api/inbox/[email]/stream)
-// Delete:     YES  (api/inbox/[email]/[id]  DELETE)
-// Names:      random adjective+noun+number
-
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
