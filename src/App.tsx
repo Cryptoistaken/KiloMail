@@ -100,7 +100,7 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
           <span className="text-xs text-muted-foreground font-mono select-none px-1">@</span>
           <select value={domain} onChange={e => setDomain(e.target.value)}
             className="bg-transparent text-xs font-mono pr-3 py-2.5 focus:outline-none text-muted-foreground cursor-pointer">
-            {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
+            {ALL_PROVIDERS.filter(p => !p.createEmail).flatMap(p => p.domains).map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div className="mt-4 flex gap-2">
@@ -261,9 +261,18 @@ export default function App() {
   }
 
   const copyEmail = () => { navigator.clipboard.writeText(email); setCopied(true); setTimeout(() => setCopied(false), 1500) }
-  const newInbox  = (domain?: string) => resetInbox(randomInbox(domain ?? DOMAINS[Math.floor(Math.random() * DOMAINS.length)]))
+  const newInbox  = async (domain?: string) => {
+    const d = domain ?? DOMAINS[Math.floor(Math.random() * DOMAINS.length)]
+    const p = getProvider(`x@${d}`)
+    if (p.createEmail) {
+      const real = await p.createEmail(d)
+      resetInbox(real)
+    } else {
+      resetInbox(randomInbox(d))
+    }
+  }
   const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
-  const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? DEFAULT_DOMAIN
+  const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? email.split("@")[1] ?? DEFAULT_DOMAIN
 
   const confirmEditRef = useRef(false)
   const confirmEdit = () => {
@@ -307,9 +316,9 @@ export default function App() {
                     className="h-full w-32 bg-transparent px-3 text-sm font-mono focus:outline-none"
                   />
                   <span className="text-xs text-muted-foreground font-mono select-none">@</span>
-                  <select value={editDomain} onChange={e => setEditDomain(e.target.value)}
+                   <select value={editDomain} onChange={e => setEditDomain(e.target.value)}
                     className="h-full bg-transparent text-xs font-mono pr-2 focus:outline-none text-muted-foreground cursor-pointer">
-                    {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
+                    {ALL_PROVIDERS.filter(p => !p.createEmail).flatMap(p => p.domains).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
                 <Button size="icon" className="h-8 w-8" onMouseDown={e => e.preventDefault()} onClick={confirmEdit}>

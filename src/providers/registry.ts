@@ -11,7 +11,8 @@ export const ALL_PROVIDERS: ProviderPlugin[] = Object.values(modules)
 
 export function getProvider(email: string): ProviderPlugin {
   const domain = email.split("@")[1] ?? ""
-  const p = ALL_PROVIDERS.find(p => p.domains.includes(domain))
+  let p = ALL_PROVIDERS.find(p => p.domains.includes(domain))
+  if (!p) p = ALL_PROVIDERS.find(p => p.matchDomain?.(email))
   if (!p) throw new Error(`No enabled provider for domain: ${domain}`)
   return p
 }

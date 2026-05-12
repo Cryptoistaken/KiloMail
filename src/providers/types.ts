@@ -14,4 +14,6 @@ export interface ProviderPlugin {
   fetchMessage(email: string, meta: MessageMeta): Promise<MessageFull | null>
   deleteMessage?(email: string, id: string): Promise<void>
   generateUsername?(domain: string): string
+  createEmail?(domain: string): Promise<string>
+  matchDomain?(email: string): boolean
 }
