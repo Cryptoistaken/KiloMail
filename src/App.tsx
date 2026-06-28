@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
 import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -295,9 +296,12 @@ export default function App() {
 
   if (route === '/' || route === '')
     return (
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background" />}>
-        <Landing onLaunch={() => { markVisited(); navigate('/inbox') }} />
-      </Suspense>
+      <>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background" />}>
+          <Landing onLaunch={() => { markVisited(); navigate('/inbox') }} />
+        </Suspense>
+        <Analytics />
+      </>
     )
 
   return (
@@ -473,6 +477,7 @@ export default function App() {
           />
         )}
       </div>
+      <Analytics />
     </TooltipProvider>
   )
 }
