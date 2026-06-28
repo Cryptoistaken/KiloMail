@@ -52,7 +52,7 @@ const DockIcon = ({ className, children, ...props }: DockIconProps) => {
       role="button"
       tabIndex={0}
       className={cn(
-        "dock-icon flex size-10 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-out hover:scale-125 active:scale-95",
+        "dock-icon flex size-12 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-out hover:scale-125 active:scale-95",
         className
       )}
       onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && props.onClick) { e.preventDefault(); (props.onClick as React.MouseEventHandler)(e as unknown as React.MouseEvent) } }}

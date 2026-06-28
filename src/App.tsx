@@ -331,7 +331,7 @@ export default function App() {
                     {ALL_PROVIDERS.filter(p => !p.createEmail).flatMap(p => p.domains).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
-                <Button size="icon" className="h-8 w-8" onMouseDown={e => e.preventDefault()} onClick={confirmEdit}>
+                <Button aria-label="Confirm" size="icon" className="h-8 w-8" onMouseDown={e => e.preventDefault()} onClick={confirmEdit}>
                   <Check className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -346,7 +346,7 @@ export default function App() {
                   <PencilLine className="h-3 w-3 text-muted-foreground shrink-0" />
                 </button>
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger aria-label="Copy address">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyEmail}>
                       {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                     </Button>
@@ -415,10 +415,10 @@ export default function App() {
           )}
 
           <Dock
-            className="mt-0 h-[58px] gap-1.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
-            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }} aria-label="Inbox">
+            className="mt-0 h-[66px] gap-1.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
+            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger aria-label="Inbox">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'relative size-10 rounded-full',
                     panel === 'inbox' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}>
                     <Inbox className="size-4" />
@@ -433,9 +433,9 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setPanel('history')} aria-label="History">
+            <DockIcon onClick={() => setPanel('history')}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger aria-label="History">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
                     panel === 'history' && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}>
                     <History className="size-4" />
@@ -445,9 +445,9 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setNewMenuOpen(o => !o)} aria-label="New inbox">
+            <DockIcon onClick={() => setNewMenuOpen(o => !o)}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger aria-label="New inbox">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
                     newMenuOpen && 'bg-muted text-foreground')}>
                     <Plus className="size-4" />
@@ -457,9 +457,9 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon aria-label="Toggle theme">
+            <DockIcon>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger aria-label="Toggle theme">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full')}>
                     <AnimatedThemeToggler asDiv className="flex h-full w-full items-center justify-center text-inherit" />
                   </div>
