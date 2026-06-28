@@ -1,0 +1,14 @@
+# KiloMail
+> Disposable email service with real-time SSE inboxes.
+
+## Key features
+- Instant disposable inboxes at @kilolabs.space
+- No sign-up or tracking
+- Real-time SSE inbox streaming
+- Auto-expiring messages after 10 minutes
+- Cloudflare MX routing + Upstash Redis storage
+- Open source (MIT license) on Vercel Edge
+
+## URLs
+- Website: https://kilomail.vercel.app
+- GitHub: https://github.com/Cryptoistaken/KiloMail

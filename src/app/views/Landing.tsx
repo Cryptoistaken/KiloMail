@@ -15,9 +15,9 @@ import { Logo } from '@/app/components/Logo'
 
 const GLOBE_BASE: COBEOptions = {
   width: 800, height: 800, onRender: () => {},
-  devicePixelRatio: 2, phi: 0, theta: 0.3,
+  devicePixelRatio: 1.5, phi: 0, theta: 0.3,
   dark: 1, diffuse: 0.8,
-  mapSamples: 16000, mapBrightness: 1.8,
+  mapSamples: 6000, mapBrightness: 1.8,
   baseColor: [0.18, 0.18, 0.22],
   markerColor: [1, 1, 1],
   glowColor: [0.3, 0.3, 0.4],
@@ -61,7 +61,7 @@ export function Landing({ onLaunch }: LandingProps) {
           <Meteors number={14} />
         </div>
         <div className="absolute inset-0 z-[1] opacity-[0.10] pointer-events-none">
-          <DottedMap dotRadius={0.18} mapSamples={2500} />
+          <DottedMap dotRadius={0.18} mapSamples={1200} />
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center overflow-hidden" style={{ height: '70vh' }}>
           <div className="relative w-full max-w-3xl">
@@ -130,7 +130,7 @@ export function Landing({ onLaunch }: LandingProps) {
                   <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground/80">
                     {f.icon}
                   </div>
-                  <h3 className="mb-1 text-sm font-semibold tracking-tight">{f.title}</h3>
+                  <h2 className="mb-1 text-sm font-semibold tracking-tight">{f.title}</h2>
                   <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
                 </div>
               ))}
