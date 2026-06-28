@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
 import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -464,6 +465,7 @@ export default function App() {
             onClose={() => setCustomModal(false)}
           />
         )}
+        <Analytics />
       </div>
     </TooltipProvider>
   )
