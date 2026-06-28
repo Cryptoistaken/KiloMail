@@ -9,9 +9,15 @@ import { Dock, DockIcon } from '@/components/ui/dock'
 const Landing = lazy(() =>
   import('@/app/views/Landing').then(m => ({ default: m.Landing }))
 )
-import { InboxView }   from '@/app/views/InboxView'
-import { MessageView } from '@/app/views/MessageView'
-import { HistoryView } from '@/app/views/HistoryView'
+const InboxView = lazy(() =>
+  import('@/app/views/InboxView').then(m => ({ default: m.InboxView }))
+)
+const MessageView = lazy(() =>
+  import('@/app/views/MessageView').then(m => ({ default: m.MessageView }))
+)
+const HistoryView = lazy(() =>
+  import('@/app/views/HistoryView').then(m => ({ default: m.HistoryView }))
+)
 import { Background }  from '@/app/components/Background'
 import { Logo }        from '@/app/components/Logo'
 
@@ -353,18 +359,20 @@ export default function App() {
             'flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0',
             (selectedId || panel !== 'inbox') && 'hidden md:flex'
           )}>
-            <InboxView email={email} messages={messages} loading={loading} connected={connected}
-              selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
-              onRefresh={() => loadInbox(email)} bodyCodes={bodyCodes}
-              canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
-            />
+            <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}>
+              <InboxView email={email} messages={messages} loading={loading} connected={connected}
+                selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
+                onRefresh={() => loadInbox(email)} bodyCodes={bodyCodes}
+                canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
+              />
+            </Suspense>
           </aside>
           <main className={cn(
             'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
             !selectedId && panel === 'inbox' && 'hidden md:flex'
           )}>
-            {panel === 'inbox'   && <MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} />}
-            {panel === 'history' && <HistoryView onSwitch={switchToEmail} onClear={() => {}} />}
+            {panel === 'inbox'   && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} /></Suspense>}
+            {panel === 'history' && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><HistoryView onSwitch={switchToEmail} onClear={() => {}} /></Suspense>}
           </main>
         </div>
 
