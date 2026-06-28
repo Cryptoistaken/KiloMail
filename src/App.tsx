@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { cn } from '@/lib/utils'
 import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -465,6 +466,7 @@ export default function App() {
           />
         )}
       </div>
+      <SpeedInsights />
     </TooltipProvider>
   )
 }
