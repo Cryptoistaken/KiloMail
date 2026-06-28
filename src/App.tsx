@@ -402,7 +402,7 @@ export default function App() {
             </div>
           )}
 
-          <Dock iconSize={40} iconMagnification={62} iconDistance={130}
+          <Dock
             className="mt-0 h-[58px] gap-0.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
             <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
               <Tooltip>
