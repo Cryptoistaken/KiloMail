@@ -1,8 +1,8 @@
 # KiloMail
 
-Disposable temp email service on `kilolabs.space`.
+Disposable email web app. Multiple domains, SSE streaming, OTP code detection.
 
-Stack: Bun · Vercel Edge Functions · Upstash Redis · Cloudflare Email Workers · Oat UI
+Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · Upstash Redis · Cloudflare Email Workers
 
 ---
 
@@ -13,13 +13,11 @@ Email sent to anything@kilolabs.space
          ↓
 Cloudflare Email Routing (catch-all → Email Worker)
          ↓
-cf-worker/index.ts — parses raw MIME, POSTs JSON to Vercel
+worker/index.ts — parses raw MIME, writes JSON to Redis
          ↓
-POST /api/webhook (x-webhook-secret header)
+Upstash Redis (inbox hash PERSIST, body keys 30-day TTL)
          ↓
-Upstash Redis (stored with 10-min TTL)
-         ↓
-Frontend polls /api/inbox/:email every 4s
+Frontend SSE stream (kilolabs) or polling (3rd-party providers)
 ```
 
 ---
@@ -37,26 +35,21 @@ Frontend polls /api/inbox/:email every 4s
 1. In Cloudflare dashboard → **Email** → **Email Routing**
 2. Enable Email Routing for `kilolabs.space`
 3. Set a **catch-all** rule → action: **Send to Worker** → select `kilomail-email-worker`
-4. Cloudflare will prompt you to add the required MX and TXT records automatically
 
 ### 3. Deploy the Email Worker
 
 ```bash
-cd cf-worker
+cd worker
 bun install
-
-# Set secrets (you'll be prompted to type the value)
-bun run secret:webhook-url     # e.g. https://kilolabs.space/api/webhook
-bun run secret:webhook-secret  # any strong random string
-
-# Deploy
-bun run deploy
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
+wrangler deploy
 ```
 
 ### 4. Deploy to Vercel
 
 ```bash
-cd ..   # back to project root
+cd ..
 bun install
 npx vercel
 ```
@@ -66,7 +59,7 @@ Set environment variables in Vercel dashboard or CLI:
 ```bash
 vercel env add UPSTASH_REDIS_REST_URL
 vercel env add UPSTASH_REDIS_REST_TOKEN
-vercel env add WEBHOOK_SECRET   # must match what you set in the CF Worker
+vercel env add WEBHOOK_SECRET      # shared with the Cloudflare worker
 ```
 
 ---
@@ -75,7 +68,6 @@ vercel env add WEBHOOK_SECRET   # must match what you set in the CF Worker
 
 ```bash
 bun install
-cp .env.example .env.local
 npx vercel dev
 ```
 
@@ -83,19 +75,21 @@ npx vercel dev
 
 ## Environment Variables
 
-### Vercel (api/)
+| Variable | Used by | Purpose |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | api/, worker/ | Redis connection |
+| `UPSTASH_REDIS_REST_TOKEN` | api/, worker/ | Redis auth |
+| `WEBHOOK_SECRET` | api/webhook.ts | Validates inbound mail from Cloudflare |
+| `TEST_MODE` | api/test.ts | Set to `1` to enable test email injection |
+| `DOMAIN` | worker/wrangler.toml | MX domain bound to the email worker |
 
-| Variable | Description |
-|---|---|
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis auth token |
-| `WEBHOOK_SECRET` | Shared secret — CF Worker sends this, Vercel verifies it |
+Secrets are set via `wrangler secret put` for the worker and Vercel env vars for the API.
 
-### Cloudflare Worker (cf-worker/)
+---
 
-Set via `wrangler secret put`:
+## Adding a Provider
 
-| Secret | Description |
-|---|---|
-| `WEBHOOK_URL` | Full URL to Vercel webhook, e.g. `https://kilolabs.space/api/webhook` |
-| `WEBHOOK_SECRET` | Must match the Vercel `WEBHOOK_SECRET` above |
+Create two files — see CLAUDE.md for the full walkthrough:
+
+1. `src/providers/<name>.provider.ts` — frontend plugin (auto-discovered)
+2. `api/providers/<name>.ts` — Vercel edge proxy
