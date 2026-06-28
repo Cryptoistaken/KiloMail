@@ -92,7 +92,7 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
             <h2 className="text-sm font-semibold">Custom inbox</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Choose your username and domain</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1 hover:bg-muted transition-colors">
+          <button aria-label="Close" onClick={onClose} className="rounded-md p-1 hover:bg-muted transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -358,7 +358,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="relative z-10 flex flex-1 gap-3 overflow-hidden p-3">
+        <main className="relative z-10 flex flex-1 gap-3 overflow-hidden p-3">
           <aside className={cn(
             'flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0',
             (selectedId || panel !== 'inbox') && 'hidden md:flex'
@@ -371,14 +371,14 @@ export default function App() {
               />
             </Suspense>
           </aside>
-          <main className={cn(
+          <section className={cn(
             'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
             !selectedId && panel === 'inbox' && 'hidden md:flex'
           )}>
             {panel === 'inbox'   && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} /></Suspense>}
             {panel === 'history' && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><HistoryView onSwitch={switchToEmail} onClear={() => {}} /></Suspense>}
-          </main>
-        </div>
+          </section>
+        </main>
 
         <footer className="relative z-10 flex items-center justify-center pb-3 pt-2">
           {newMenuOpen && (
@@ -415,8 +415,8 @@ export default function App() {
           )}
 
           <Dock
-            className="mt-0 h-[58px] gap-0.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
-            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
+            className="mt-0 h-[58px] gap-1.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
+            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }} aria-label="Inbox">
               <Tooltip>
                 <TooltipTrigger>
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'relative size-10 rounded-full',
@@ -433,7 +433,7 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setPanel('history')}>
+            <DockIcon onClick={() => setPanel('history')} aria-label="History">
               <Tooltip>
                 <TooltipTrigger>
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
@@ -445,7 +445,7 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setNewMenuOpen(o => !o)}>
+            <DockIcon onClick={() => setNewMenuOpen(o => !o)} aria-label="New inbox">
               <Tooltip>
                 <TooltipTrigger>
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
@@ -457,7 +457,7 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon>
+            <DockIcon aria-label="Toggle theme">
               <Tooltip>
                 <TooltipTrigger>
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full')}>

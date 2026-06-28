@@ -49,10 +49,13 @@ export interface DockIconProps extends React.HTMLAttributes<HTMLDivElement> {
 const DockIcon = ({ className, children, ...props }: DockIconProps) => {
   return (
     <div
+      role="button"
+      tabIndex={0}
       className={cn(
         "dock-icon flex size-10 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-out hover:scale-125 active:scale-95",
         className
       )}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && props.onClick) { e.preventDefault(); (props.onClick as React.MouseEventHandler)(e as unknown as React.MouseEvent) } }}
       {...props}
     >
       <div className="flex h-full w-full items-center justify-center">

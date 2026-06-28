@@ -39,70 +39,72 @@ export function Landing({ onLaunch }: LandingProps) {
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-40 bg-gradient-to-b from-background to-transparent" />
         <div className="relative z-[4] flex flex-1 flex-col">
-          <nav className="flex items-center justify-between px-6 pt-5">
+          <header className="flex items-center justify-between px-6 pt-5">
             <div className="flex items-center gap-2">
               <Logo variant="icon" className="h-7 w-7 sm:hidden" />
               <Logo variant="logo" className="hidden h-5 sm:block" />
             </div>
-            <div className="flex items-center gap-3">
+            <nav className="flex items-center gap-3" aria-label="Site">
               <button onClick={() => navigate('/docs')}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <BookOpen className="h-3.5 w-3.5" /> Docs
               </button>
               <AnimatedThemeToggler className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm hover:bg-muted transition-colors" />
-            </div>
-          </nav>
-          <main className="flex flex-1 flex-col items-center justify-center px-4 pt-16 pb-16 text-center">
-            <Badge variant="outline" className="mb-8 gap-1.5 border-border/60 px-3 py-1 text-xs tracking-wide">
-              <Zap className="h-3 w-3 text-primary" />
-              Real-time · SSE · Cloudflare Edge
-            </Badge>
-            <h1 className="max-w-3xl text-[clamp(2.8rem,6vw,4.5rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
-              <span className="bg-gradient-to-br from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent">
-                Disposable email
-              </span>
-              <span className="text-foreground">,</span>
-              <br />
-              <span className="bg-gradient-to-r from-primary via-foreground/80 to-muted-foreground bg-clip-text text-transparent">
-                done right.
-              </span>
-            </h1>
-            <p className="mt-6 max-w-[480px] text-[1.05rem] leading-relaxed text-muted-foreground">
-              KiloMail gives you a live, auto-expiring inbox at{' '}
-              <code className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
-                @{DOMAIN}
-              </code>
-              . No sign-up. No tracking. Just mail.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button size="lg" onClick={onLaunch} className="h-11 gap-2 px-6 text-sm font-semibold shadow-lg shadow-primary/20">
-                Open Inbox <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={onLaunch} className="h-11 px-6 text-sm font-medium">
-                Generate address
-              </Button>
-            </div>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-xs text-muted-foreground/70">
-              {TRUST.map(t => (
-                <span key={t} className="flex items-center gap-1.5">
-                  <Check className="h-3 w-3 text-emerald-500/80" /> {t}
+            </nav>
+          </header>
+          <main>
+            <div className="flex flex-1 flex-col items-center justify-center px-4 pt-16 pb-16 text-center">
+              <Badge variant="outline" className="mb-8 gap-1.5 border-border/60 px-3 py-1 text-xs tracking-wide">
+                <Zap className="h-3 w-3 text-primary" />
+                Real-time · SSE · Cloudflare Edge
+              </Badge>
+              <h1 className="max-w-3xl text-[clamp(2.8rem,6vw,4.5rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
+                <span className="bg-gradient-to-br from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent">
+                  Disposable email
                 </span>
-              ))}
+                <span className="text-foreground">,</span>
+                <br />
+                <span className="bg-gradient-to-r from-primary via-foreground/80 to-muted-foreground bg-clip-text text-transparent">
+                  done right.
+                </span>
+              </h1>
+              <p className="mt-6 max-w-[480px] text-[1.05rem] leading-relaxed text-muted-foreground">
+                KiloMail gives you a live, auto-expiring inbox at{' '}
+                <code className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+                  @{DOMAIN}
+                </code>
+                . No sign-up. No tracking. Just mail.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+                <Button size="lg" onClick={onLaunch} className="h-11 gap-2 px-6 text-sm font-semibold shadow-lg shadow-primary/20">
+                  Open Inbox <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button size="lg" variant="outline" onClick={onLaunch} className="h-11 px-6 text-sm font-medium">
+                  Generate address
+                </Button>
+              </div>
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-xs text-muted-foreground/70">
+                {TRUST.map(t => (
+                  <span key={t} className="flex items-center gap-1.5">
+                    <Check className="h-3 w-3 text-emerald-500/80" /> {t}
+                  </span>
+                ))}
+              </div>
             </div>
-          </main>
-          <section className="relative mx-auto w-full max-w-4xl px-4 pb-[38vh]">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((f, i) => (
-                <div key={i} className="rounded-xl border border-border/60 bg-background/60 p-5 backdrop-blur-md transition-all hover:border-primary/30 hover:bg-background/80 hover:shadow-sm">
-                  <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground/80">
-                    {f.icon}
+            <section className="relative mx-auto w-full max-w-4xl px-4 pb-[38vh]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {FEATURES.map((f, i) => (
+                  <div key={i} className="rounded-xl border border-border/60 bg-background/60 p-5 backdrop-blur-md transition-all hover:border-primary/30 hover:bg-background/80 hover:shadow-sm">
+                    <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground/80">
+                      {f.icon}
+                    </div>
+                    <h2 className="mb-1 text-sm font-semibold tracking-tight">{f.title}</h2>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
                   </div>
-                  <h2 className="mb-1 text-sm font-semibold tracking-tight">{f.title}</h2>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          </main>
         </div>
       </div>
     </TooltipProvider>
