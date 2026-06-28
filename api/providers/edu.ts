@@ -86,7 +86,7 @@ export default async function handler(req: Request): Promise<Response> {
     const d = await r.json() as { emails: EduEmail[] }
     const msg = d.emails?.find(m => String(m.uid) === uid)
     if (!msg) return json({ error: "Not found" }, 404)
-    return json({ ...mapEmail(msg, Date.now()), read: true, text: msg.body?.text ?? "", html: msg.body?.html ?? "" })
+    return json({ ...mapEmail(msg, Date.now()), read: true, text: decodeQP(msg.body?.text ?? ""), html: decodeQP(msg.body?.html ?? "") })
   }
 
   return json({ error: "Unknown action" }, 400)
@@ -123,6 +123,13 @@ function mapEmail(m: EduEmail, now: number) {
     read:       false,
     timeAgo:    relativeTime(m.date ?? new Date().toISOString(), now),
   }
+}
+
+function decodeQP(input: string): string {
+  if (!input) return ""
+  return input
+    .replace(/=\r?\n/g, "")
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
 }
 
 function relativeTime(iso: string, now: number): string {

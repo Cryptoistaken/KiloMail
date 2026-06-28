@@ -12,6 +12,18 @@ interface MessageViewProps {
   onDelete: () => void
 }
 
+function linkify(text: string): string {
+  const urlRegex = /(https?:\/\/[^\s<]+)/g
+  return text.replace(urlRegex, (url) => {
+    const href = url.replace(/[.,!?;:)]+$/, '')
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">${href}</a>`
+  })
+}
+
+function addTargetBlank(html: string): string {
+  return html.replace(/<a\s(?![^>]*target=)/gi, '<a target="_blank" rel="noopener noreferrer" ')
+}
+
 export function MessageView({ message, loading, onClose, onDelete }: MessageViewProps) {
   const [view, setView] = useState<'html' | 'text'>('html')
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -27,7 +39,7 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
         html,body{margin:0;padding:12px 16px;font-family:sans-serif;font-size:14px;
           background:#fff;color:#111;word-break:break-word;line-height:1.6}
         a{color:#2563eb}img{max-width:100%}
-      </style></head><body>${message.html}</body></html>`)
+      </style></head><body>${addTargetBlank(message.html)}</body></html>`)
       doc.close()
     }
   }, [message?.html, message?.id, view])
@@ -123,13 +135,13 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
         {message.html && view === 'html'
           ? <iframe
               ref={iframeRef}
-              sandbox="allow-same-origin"
+              sandbox="allow-same-origin allow-popups"
               className="h-full w-full border-0"
               title="Email body"
             />
-          : <pre className="p-5 font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-              {message.text || '(empty body)'}
-            </pre>
+          : <pre className="p-5 font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+               dangerouslySetInnerHTML={{ __html: linkify(message.text || '(empty body)') }} />
+
         }
       </div>
     </div>

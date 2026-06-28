@@ -1,0 +1,87 @@
+post https://tmailor.com/api
+
+body {"action":"newemail","curentToken":"","fbToken":null}
+
+response {
+  "msg": "ok",
+  "email": "ngz3jvw@haibabon.com",
+  "create": 1778594344,
+  "sort": 1778594344,
+  "permission_desc": "note_email_nosave",
+  "accesstoken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlIjoicHprS1pUOGxNM3lpTEhIMXBTRVZxeFcySTN5aUZ5QXdvMU9KTXlNNkZKcVpGYXl6Rm1XR3JSMUlJM3lqWjFjMkRhTUtuUjBtTHoxaExIMG1FU0UxcUo1WEkzSVpyd3liSktjT25KOVRJek1KTEtTNUdVYjFxSjlYRktBQUlReWFHUmM1blNNM0xhTWtJUVMxb3hjZW5LTzJBS3FpWndPMkpJT0tyUjFZR0pBWlp4dTJEYU1LWjAxWElhTU1IU3E1bzBjR0wyOUhBS3lrWkd5d0dJT0pBeWMzSHdPbm9LTmxESVNqQVN5REltU2paeHlmRm1XNXJTTTNMemNtRjJnZ0R4cTBBS09kQ0cwPSJ9.4KPnKlMF2Km87AwICXWvdQ-HftEXfKxHWH0WbNwe_4Q",
+  "client-block": 0
+}
+
+
+post https://tmailor.com/api
+
+body    {"action":"listinbox","accesstoken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlIjoicHprS1pUOGxNM3lpTEhIMXBTRVZxeFcySTN5aUZ5QXdvMU9KTXlNNkZKcVpGYXl6Rm1XR3JSMUlJM3lqWjFjMkRhTUtuUjBtTHoxaExIMG1FU0UxcUo1WEkzSVpyd3liSktjT25KOVRJek1KTEtTNUdVYjFxSjlYRktBQUlReWFHUmM1blNNM0xhTWtJUVMxb3hjZW5LTzJBS3FpWndPMkpJT0tyUjFZR0pBWlp4dTJEYU1LWjAxWElhTU1IU3E1bzBjR0wyOUhBS3lrWkd5d0dJT0pBeWMzSHdPbm9LTmxESVNqQVN5REltU2paeHlmRm1XNXJTTTNMemNtRjJnZ0R4cTBBS09kQ0cwPSJ9.4KPnKlMF2Km87AwICXWvdQ-HftEXfKxHWH0WbNwe_4Q","fbToken":null,"curentToken":"null"}
+
+
+response
+
+{
+  "msg": "ok",
+  "email": "ngz3jvw@haibabon.com",
+  "code": "4edc7208-1c15-46bd-9dbe-2a20b89f8959",
+  "data": null
+}
+
+or 
+
+response  {
+  "msg": "ok",
+  "email": "ngz3jvw@haibabon.com",
+  "code": "d074b4d7-2d8c-4802-8242-7b29072425a6",
+  "data": {
+    "15f06f9f-66df-4b5d-83ba-e8ee3afba07e": {
+      "id": "15f06f9f-66df-4b5d-83ba-e8ee3afba07e",
+      "uuid": "15f06f9f-66df-4b5d-83ba-e8ee3afba07e",
+      "email_id": "b3pxYTZaMnRjMnFtME9iM0xKeXd2TEppV2lvanY1d3VvMjFuOFpHdkl6Wm9RTXpuQkpMb2dBd2JNeE1hdjAwcEx3SWJ4WUd6dG1MMXpSZzVNR3VzeU1HYUF1TXR6V3VtWlFxM3lzUXdMbU1pekF5akwyQXV1WkduVjBadndSbG9Md01ueVp3b1d5WmJ3Wm1hQVF4cDBaUWJObEF6bUQxMVl6NTVhcndzQWRxYWFxTnRuVFNtY0x6M1N2b3cyNGhpTDI5amdzUXVSM0FubXQxdkJHRG8wQXdueThab049PQ==",
+      "subject": "good morning and",
+      "sender_name": "POPY",
+      "sender_email": "traderspopy@gmail.com",
+      "avatar": "P",
+      "read": 0,
+      "push": 0,
+      "receive_time": 1778594469,
+      "rtime": 1778594469,
+      "sort": 1778594469,
+      "exp_count": 86289
+    }
+  }
+}
+
+
+
+or 
+
+{"msg":"ok","email":"du1ieoi@kemail.uk","code":"f385046d-9ee9-4c23-9698-2b6e96a94b01","data":{"cc271a3d-f967-47e3-b4c9-93aeb118a87e":{"id":"cc271a3d-f967-47e3-b4c9-93aeb118a87e","uuid":"cc271a3d-f967-47e3-b4c9-93aeb118a87e","email_id":"TVVIcWtuSmhJaW4xSE9ldk1KMXJ1bkpiamhxdkpnOHhMMlpybEFtelN1Wm4yRGd2TXd4eTJBbGgwMEF4MkhtcFlKVnAwTG0yeGdCN0dBdTFNSlZua1pHM3V1QnFRcXlzc1FIOTNMbTZaMk03elN5NEJURTd3TUpyV3VaM0daa29ad0g0alpKcFYzTTlHWms5TVRBM3dMMm5MallyekUxb1pKeTF5bzIxeU5uODJJZ25MSnk4ZllhN0llc3JRUjM1QW10NzFCR3BENEEzR1M4NlpOPXM9","subject":"[*****] is your Instagram code","sender_name":"Instagram","sender_email":"no-reply@mail.instagram.com","avatar":"I","read":0,"push":0,"receive_time":1778594851,"rtime":1778594851,"sort":1778594851,"exp_count":86399}}}
+
+
+
+
+to read full inbox post https://tmailor.com/api
+
+body {"action":"read","accesstoken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlIjoicHprS1pUOGxNM3lpTEhIMXBTRVZxeFcySTN5aUZ5QXdvMU9KTXlNNkZKcVpGYXl6Rm1XR3JSMUlJM3lqWjFjMkRhTUtuUjBtTHoxaExIMG1FU0UxcUo1WEkzSVpyd3liSktjT25KOVRJek1KTEtTNUdVYjFxSjlYRktBQUlReWFHUmM1blNNM0xhTWtJUVMxb3hjZW5LTzJBS3FpWndPMkpJT0tyUjFZR0pBWlp4dTJEYU1LWjAxWElhTU1IU3E1bzBjR0wyOUhBS3lrWkd5d0dJT0pBeWMzSHdPbm9LTmxESVNqQVN5REltU2paeHlmRm1XNXJTTTNMemNtRjJnZ0R4cTBBS09kQ0cwPSJ9.4KPnKlMF2Km87AwICXWvdQ-HftEXfKxHWH0WbNwe_4Q","email_code":"f385046d-9ee9-4c23-9698-2b6e96a94b01","email_token":"TVVIcWtuSmhJaW4xSE9ldk1KMXJ1bkpiamhxdkpnOHhMMlpybEFtelN1Wm4yRGd2TXd4eTJBbGgwMEF4MkhtcFlKVnAwTG0yeGdCN0dBdTFNSlZua1pHM3V1QnFRcXlzc1FIOTNMbTZaMk03elN5NEJURTd3TUpyV3VaM0daa29ad0g0alpKcFYzTTlHWms5TVRBM3dMMm5MallyekUxb1pKeTF5bzIxeU5uODJJZ25MSnk4ZllhN0llc3JRUjM1QW10NzFCR3BENEEzR1M4NlpOPXM9=","fbToken":null,"curentToken":"null"}
+
+response {
+  "msg": "ok",
+  "data": {
+    "id": "c87f38cc-c468-4547-a039-7c805be37fa8",
+    "email_id": "b3pxYTZuSnRjNHBtSE8wdm5KZ3dtbzJrTWNZZGFJZWdzVFp2NEEyeExtQmZUQXdiWUpaczBBd3Z0Z0FoUUgweEFsMXB1WlE4WjVZN0dxd3NCUU4zMUx6OEhtQXAyTXVwQlVrcHZabTRTdkw2Skg1OEF6SDQwTG01QXZMNHpMbTdNSlZuMUJHYVIyQnRRcXhtTHdTdnZaR3d0MExrRjVoZE0zY2djbmF2dWtEeFVFY2ZuM0FiaU16c3hocXZKZzhoWkdweDNCUXBINUI4R04xN1p0PXM9",
+    "subject": "hi",
+    "sender_name": "KiloLabs Uxlink",
+    "sender_email": "uxlinkkilolabsoficialai@gmail.com",
+    "avatar": "",
+    "read": 1,
+    "push": 0,
+    "receive_time": 1778599052,
+    "rtime": 1778599052,
+    "sort": 1778599052,
+    "exp_count": 86285,
+    "md5": "e876d0eb115288405e98c13560f42b2c",
+    "body": "<div dir=\"ltr\">&lt;body&gt;</div>",
+    "url_body": null
+  }
+}
