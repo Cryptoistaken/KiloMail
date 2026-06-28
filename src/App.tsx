@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { Dock, DockIcon } from '@/components/ui/dock'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 const Landing = lazy(() =>
   import('@/app/views/Landing').then(m => ({ default: m.Landing }))
@@ -465,6 +466,7 @@ export default function App() {
           />
         )}
       </div>
+      <SpeedInsights />
     </TooltipProvider>
   )
 }
