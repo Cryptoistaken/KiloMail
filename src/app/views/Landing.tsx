@@ -1,42 +1,14 @@
 import { Zap, Shield, Clock, Globe as GlobeIcon, RefreshCw, Sparkles, ArrowRight, Check, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Globe } from '@/components/ui/globe'
 import { Meteors } from '@/components/ui/meteors'
 import { DottedMap } from '@/components/ui/dotted-map'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import type { COBEOptions } from 'cobe'
 import { DOMAIN } from '@/lib/types'
-import { useTheme } from '@/hooks/useTheme'
 import { navigate } from '@/hooks/useHashRoute'
 import { Background } from '@/app/components/Background'
 import { Logo } from '@/app/components/Logo'
-
-const GLOBE_BASE: COBEOptions = {
-  width: 800, height: 800, onRender: () => {},
-  devicePixelRatio: 1.5, phi: 0, theta: 0.3,
-  dark: 1, diffuse: 0.8,
-  mapSamples: 6000, mapBrightness: 1.8,
-  baseColor: [0.18, 0.18, 0.22],
-  markerColor: [1, 1, 1],
-  glowColor: [0.3, 0.3, 0.4],
-  markers: [
-    { location: [23.8103, 90.4125], size: 0.07 },
-    { location: [40.7128, -74.006],  size: 0.08 },
-    { location: [51.5074, -0.1278],  size: 0.06 },
-    { location: [35.6762, 139.6503], size: 0.06 },
-    { location: [1.3521,  103.8198], size: 0.05 },
-    { location: [48.8566, 2.3522],   size: 0.05 },
-    { location: [-33.8688,151.2093], size: 0.05 },
-    { location: [37.7749,-122.4194], size: 0.07 },
-  ],
-}
-
-const GLOBE_LIGHT: COBEOptions = {
-  ...GLOBE_BASE, dark: 0, diffuse: 0.4, mapBrightness: 1.2,
-  baseColor: [1, 1, 1], markerColor: [0.1, 0.1, 0.9], glowColor: [1, 1, 1],
-}
 
 const FEATURES = [
   { icon: <Zap className="h-4 w-4" />,       title: 'Instant delivery',  desc: 'Emails arrive in seconds via Cloudflare MX routing.' },
@@ -52,7 +24,6 @@ const TRUST = ['kilolabs.space domain', 'Cloudflare MX', 'Upstash Redis', 'Verce
 interface LandingProps { onLaunch: () => void }
 
 export function Landing({ onLaunch }: LandingProps) {
-  const theme = useTheme()
   return (
     <TooltipProvider>
       <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
@@ -63,12 +34,8 @@ export function Landing({ onLaunch }: LandingProps) {
         <div className="absolute inset-0 z-[1] opacity-[0.10] pointer-events-none">
           <DottedMap dotRadius={0.18} mapSamples={1200} />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center overflow-hidden" style={{ height: '70vh' }}>
-          <div className="relative w-full max-w-3xl">
-            <Globe className="bottom-0 left-1/2 -translate-x-1/2 opacity-80"
-              config={theme === 'dark' ? GLOBE_BASE : GLOBE_LIGHT} />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/80 to-transparent" />
-          </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center overflow-hidden" style={{ height: '40vh' }}>
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-40 bg-gradient-to-b from-background to-transparent" />
         <div className="relative z-[4] flex flex-1 flex-col">
