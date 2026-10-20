@@ -116,8 +116,8 @@ function Endpoint({
 
 const FEATURES = [
   { icon: <Zap className="h-4 w-4 text-primary" />, title: 'Instant delivery', desc: 'Cloudflare receives SMTP, writes to Upstash Redis, SSE pushes to the browser — all under 1 second.' },
-  { icon: <Shield className="h-4 w-4 text-primary" />, title: 'Zero sign-up', desc: 'No account, no OAuth, no tracking. Generate an @kilolabs.space address and start receiving.' },
-  { icon: <Clock className="h-4 w-4 text-primary" />, title: 'Auto-expiry', desc: 'Inboxes expire 10 minutes after the last received email. Nothing persists forever.' },
+  { icon: <Shield className="h-4 w-4 text-primary" />, title: 'Zero sign-up', desc: 'No account, no OAuth, no tracking. Generate an @factoryai.tech address and start receiving.' },
+  { icon: <Clock className="h-4 w-4 text-primary" />, title: '30-day retention', desc: 'Every message is kept for 30 days, then removed automatically. No manual cleanup.' },
   { icon: <Globe className="h-4 w-4 text-primary" />, title: 'SSE live stream', desc: 'Real-time push via Server-Sent Events. No polling. The inbox updates the moment mail arrives.' },
   { icon: <RefreshCw className="h-4 w-4 text-primary" />, title: 'Instant regeneration', desc: 'Click once to generate a fresh random address. Old address expires on its own.' },
   { icon: <Sparkles className="h-4 w-4 text-primary" />, title: 'Open source (MIT)', desc: 'Full source on GitHub. Self-host on Vercel + Upstash in under 5 minutes.' },
@@ -143,7 +143,7 @@ export function DocsView() {
           <h1 className="text-xl font-bold tracking-tight text-foreground">KiloMail API Reference</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Base URL: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">https://kilomail.vercel.app</code>
-            {' · '}Domain: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">kilolabs.space</code>
+            {' · '}Domain: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">factoryai.tech</code>
           </p>
           <a href="https://github.com/Cryptoistaken" target="_blank" rel="noopener noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
@@ -196,7 +196,7 @@ export function DocsView() {
         <Section title="Endpoints">
           <Endpoint method="GET" path="/api/inbox/:email"
             desc="List all messages in an inbox. Returns metadata only — no body content. Returns [] for unknown addresses. Never returns 404."
-            params={[{ name: ':email', type: 'string', desc: 'URL-encoded address e.g. mybox%40kilolabs.space' }]}
+            params={[{ name: ':email', type: 'string', desc: 'URL-encoded address e.g. mybox%40factoryai.tech' }]}
             headers={[{ name: 'If-None-Match', required: 'No', desc: 'Pass a previous ETag value; returns 304 if inbox is unchanged' }]}
             response={`[\n  {\n    "id": "3f2a1b4c-...",\n    "from": "sender@example.com",\n    "subject": "Your OTP code",\n    "receivedAt": "2026-03-15T04:58:16.053Z",\n    "read": false,\n    "timeAgo": "2m ago"\n  }\n]`}
             extra={
@@ -208,7 +208,7 @@ export function DocsView() {
                 ]} />
               </div>
             }
-            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40kilolabs.space`}
+            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech`}
           />
           <Endpoint method="GET" path="/api/inbox/:email/stream"
             desc="Real-time Server-Sent Events stream. Pushes full inbox state whenever it changes. Checks Redis every 800ms, emits only on actual changes. Auto-closes after ~295s — the browser EventSource reconnects automatically."
@@ -223,7 +223,7 @@ export function DocsView() {
                 ]} />
               </div>
             }
-            curl={`curl -N https://kilomail.vercel.app/api/inbox/mybox%40kilolabs.space/stream`}
+            curl={`curl -N https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/stream`}
           />
           <Endpoint method="GET" path="/api/inbox/:email/:id"
             desc="Fetch the full body of a single message. Read state is not written back to the server — it's client-side only."
@@ -236,7 +236,7 @@ export function DocsView() {
               { status: '404', body: '{ "error": "Not found" }', reason: 'Message ID not in inbox' },
               { status: '400', body: '{ "error": "Invalid request" }', reason: 'Missing or malformed params' },
             ]}
-            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40kilolabs.space/3f2a1b4c-...`}
+            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/3f2a1b4c-...`}
           />
           <Endpoint method="DELETE" path="/api/inbox/:email/:id"
             desc="Permanently delete a message. Removes metadata and body atomically. Inbox TTL is preserved."
@@ -249,15 +249,15 @@ export function DocsView() {
               { status: '404', body: '{ "error": "Not found" }', reason: 'Message ID not in inbox' },
               { status: '400', body: '{ "error": "Invalid request" }', reason: 'Missing or malformed params' },
             ]}
-            curl={`curl -X DELETE "https://kilomail.vercel.app/api/inbox/mybox%40kilolabs.space/3f2a1b4c-..."`}
+            curl={`curl -X DELETE "https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/3f2a1b4c-..."`}
           />
         </Section>
 
         <Section title="Limits">
           <Table headers={['Property', 'Value']} rows={[
-            ['Inbox TTL', '600s from last received email — resets on each delivery'],
+            ['Inbox TTL', '30 days from receipt — expired messages are filtered and pruned'],
             ['Max messages', '50 per inbox — oldest trimmed first on overflow'],
-            ['Domain', 'Only @kilolabs.space accepted'],
+            ['Domain', 'Only @factoryai.tech accepted'],
             ['Read state', 'Client-side only — no server write on message open'],
             ['SSE check interval', '800ms — emits only when inbox changes'],
             ['SSE max duration', '~295s — client must reconnect'],

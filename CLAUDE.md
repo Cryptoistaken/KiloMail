@@ -36,8 +36,7 @@ src/
   providers/
     types.ts                     ProviderPlugin interface — do not change without updating all providers
     registry.ts                  auto-discovery via import.meta.glob — NEVER EDIT
-    kilolabs.provider.ts         kilolabs.space | SSE | delete supported
-    edu.provider.ts              iunp.edu.rs, warsawuni.edu.pl | SSE | no delete
+    kilolabs.provider.ts         factoryai.tech | SSE | delete supported
   app/
     views/
       Landing.tsx                marketing page shown to first-time visitors
@@ -57,7 +56,6 @@ api/
       [id].ts                    GET + DELETE single message (kilolabs only)
   providers/
     hd.ts                        proxy for hotmail9.com
-    edu.ts                       proxy for getedumail.com
   webhook.ts                     receives inbound mail from Cloudflare, writes to Redis
   test.ts                        inject a fake email (TEST_MODE=1 only)
 
@@ -95,7 +93,7 @@ type Panel = "inbox" | "history"
 
 // Constants
 const BASE   = "https://kilomail.vercel.app"
-const DOMAIN = "kilolabs.space"     // primary own domain
+const DOMAIN = "factoryai.tech"     // primary own domain
 ```
 
 ---
@@ -395,10 +393,10 @@ inbox:<email>          Redis hash — field = message id, value = JSON MessageMe
 body:<id>              Redis string — JSON { text, html }  (TTL per message)
 ```
 
-- Inbox hash has no TTL (`PERSIST`); individual body keys expire after 30 days
+- Inbox hash expires 30 days after the last delivery (`EXPIRE` reset on write); each message also carries `expiresAt` and body keys use a 30-day TTL
 - Messages whose `expiresAt` has passed are filtered out on read and pruned from the hash
 - Max 50 messages per inbox — oldest trimmed on write when exceeded
-- Worker TTL is only 10 min (`worker/index.ts`) — differs from webhook TTL (30 days). Worker is for live transient mail; webhook is for durable storage.
+- Worker and webhook use the same 30-day TTL
 
 ---
 

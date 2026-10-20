@@ -7,7 +7,7 @@ const BASE = "https://kilomail.vercel.app"
 export default {
   id:      "kilolabs",
   name:    "KiloLabs",
-  domains: ["kilolabs.space"],
+  domains: ["factoryai.tech"],
   enabled: true,
 
   generateUsername() { return generateUsername() },

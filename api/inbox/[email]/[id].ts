@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "kilolabs.space";
+const DOMAIN = "factoryai.tech";
 const CORS = {
   "Content-Type": "application/json",
   "Cache-Control": "no-store",

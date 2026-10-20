@@ -19,4 +19,4 @@ export function getProvider(email: string): ProviderPlugin {
 
 export const DOMAINS = ALL_PROVIDERS.flatMap(p => p.domains)
 
-export const DEFAULT_DOMAIN = DOMAINS[0] ?? "kilolabs.space"
+export const DEFAULT_DOMAIN = DOMAINS[0] ?? "factoryai.tech"

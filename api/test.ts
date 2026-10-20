@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "kilolabs.space";
+const DOMAIN = "factoryai.tech";
 const TTL = 2592000;
 const MAX_MESSAGES = 50;
 

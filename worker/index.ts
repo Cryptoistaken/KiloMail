@@ -6,7 +6,7 @@ export interface Env {
   DOMAIN: string;
 }
 
-const TTL = 600;
+const TTL = 2592000; // 30 days
 const MAX_MESSAGES = 50;
 
 export default {
@@ -18,11 +18,13 @@ export default {
     if (!to.endsWith(`@${env.DOMAIN}`)) return;
 
     const id = crypto.randomUUID();
+    const now = Date.now();
     const meta = JSON.stringify({
       id,
       from: message.from ?? "",
       subject: parsed.subject ?? "(no subject)",
-      receivedAt: new Date().toISOString(),
+      receivedAt: new Date(now).toISOString(),
+      expiresAt: now + TTL * 1000,
       read: false,
     });
     const body = JSON.stringify({ text: parsed.text ?? "", html: parsed.html ?? "" });

@@ -16,7 +16,7 @@ export interface MessageFull extends MessageMeta {
 export type Panel = "inbox" | "history"
 
 export const BASE        = "https://kilomail.vercel.app"
-export const DOMAIN      = "kilolabs.space"
+export const DOMAIN      = "factoryai.tech"
 export const EMAIL_KEY   = "kilomail_current_email"
 export const VISITED_KEY = "kilomail_visited"
 

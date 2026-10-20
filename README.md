@@ -9,15 +9,15 @@ Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · 
 ## Architecture
 
 ```
-Email sent to anything@kilolabs.space
+Email sent to anything@factoryai.tech
          ↓
 Cloudflare Email Routing (catch-all → Email Worker)
          ↓
 worker/index.ts — parses raw MIME, writes JSON to Redis
          ↓
-Upstash Redis (inbox hash PERSIST, body keys 30-day TTL)
+Upstash Redis (inbox hash, body keys with 30-day TTL)
          ↓
-Frontend SSE stream (kilolabs) or polling (3rd-party providers)
+Frontend SSE stream
 ```
 
 ---
@@ -33,7 +33,7 @@ Frontend SSE stream (kilolabs) or polling (3rd-party providers)
 ### 2. Cloudflare Email Routing
 
 1. In Cloudflare dashboard → **Email** → **Email Routing**
-2. Enable Email Routing for `kilolabs.space`
+2. Enable Email Routing for `factoryai.tech`
 3. Set a **catch-all** rule → action: **Send to Worker** → select `kilomail-email-worker`
 
 ### 3. Deploy the Email Worker
@@ -93,3 +93,5 @@ Create two files — see CLAUDE.md for the full walkthrough:
 
 1. `src/providers/<name>.provider.ts` — frontend plugin (auto-discovered)
 2. `api/providers/<name>.ts` — Vercel edge proxy
+
+The only shipped provider is `kilolabs` (`factoryai.tech`), which reads Upstash Redis directly.

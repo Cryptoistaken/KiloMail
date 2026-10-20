@@ -5,6 +5,8 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+const DOMAIN = "factoryai.tech";
+
 const CORS = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
@@ -28,7 +30,7 @@ export default async function handler(req: Request): Promise<Response> {
     pathParts[pathParts.length - 1] ?? ""
   ).toLowerCase().trim();
 
-  if (!email || !email.endsWith("@kilolabs.space")) {
+  if (!email || !email.endsWith(`@${DOMAIN}`)) {
     return new Response(JSON.stringify([]), { headers: CORS });
   }
 

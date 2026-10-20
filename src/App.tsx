@@ -241,7 +241,21 @@ export default function App() {
     saveToHistory(email)
     loadInbox(email)
     startStream(email)
-    return () => { stopStream.current?.(); stopStream.current = null }
+    // Sleep while the tab is hidden: drop the stream, reconnect on return
+    const onVisibility = () => {
+      if (document.hidden) {
+        stopStream.current?.(); stopStream.current = null
+        setConnected(false)
+      } else {
+        loadInbox(email)
+        startStream(email)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      stopStream.current?.(); stopStream.current = null
+    }
   }, [route, email, loadInbox, startStream])
 
   const selectMessage = async (id: string) => {
@@ -388,8 +402,7 @@ export default function App() {
             >
               <p className="px-3 pt-3 pb-1.5 text-xs font-semibold text-foreground">New random inbox on…</p>
               {DOMAINS.map(d => {
-                const provider = ALL_PROVIDERS.find(p => p.domains.includes(d))
-                const tag = provider?.id === 'kilolabs' ? 'own' : provider?.id === 'edu' ? 'edu' : '3rd party'
+                const tag = 'own'
                 return (
                   <button key={d}
                     className="flex w-full items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-muted transition-colors"

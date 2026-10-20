@@ -1,6 +1,6 @@
 import readline from "readline";
 
-const DOMAIN = "kilolabs.space";
+const DOMAIN = "factoryai.tech";
 const BASE_URL = "https://kilomail.vercel.app";
 
 const rl = readline.createInterface({

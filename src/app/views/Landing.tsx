@@ -13,13 +13,13 @@ import { Logo } from '@/app/components/Logo'
 const FEATURES = [
   { icon: <Zap className="h-4 w-4" />,       title: 'Instant delivery',  desc: 'Emails arrive in seconds via Cloudflare MX routing.' },
   { icon: <Shield className="h-4 w-4" />,    title: 'Zero sign-up',      desc: 'No account needed. Generate an inbox and start receiving.' },
-  { icon: <Clock className="h-4 w-4" />,     title: 'Auto-expiry',       desc: 'Inbox self-destructs 10 minutes after last email.' },
+  { icon: <Clock className="h-4 w-4" />,     title: '30-day retention',  desc: 'Every message is kept for 30 days, then deleted automatically.' },
   { icon: <GlobeIcon className="h-4 w-4" />, title: 'Live stream',       desc: 'Real-time SSE — no polling, no page refreshes.' },
   { icon: <RefreshCw className="h-4 w-4" />, title: 'Auto-regenerate',   desc: 'Generate a fresh address any time with one click.' },
   { icon: <Sparkles className="h-4 w-4" />,  title: 'Open source',       desc: 'MIT licensed. Self-host on Vercel + Upstash in minutes.' },
 ]
 
-const TRUST = ['kilolabs.space domain', 'Cloudflare MX', 'Upstash Redis', 'Vercel Edge']
+const TRUST = ['factoryai.tech domain', 'Cloudflare MX', 'Upstash Redis', 'Vercel Edge']
 
 interface LandingProps { onLaunch: () => void }
 
@@ -69,7 +69,7 @@ export function Landing({ onLaunch }: LandingProps) {
                 </span>
               </h1>
               <p className="mt-6 max-w-[480px] text-[1.05rem] leading-relaxed text-muted-foreground">
-                KiloMail gives you a live, auto-expiring inbox at{' '}
+                KiloMail gives you a live inbox at{' '}
                 <code className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
                   @{DOMAIN}
                 </code>

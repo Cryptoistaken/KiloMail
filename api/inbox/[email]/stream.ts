@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "kilolabs.space";
+const DOMAIN = "factoryai.tech";
 const CHECK_INTERVAL = 2000;
 const MAX_DURATION = 295_000;
 
@@ -39,12 +39,13 @@ export default async function handler(req: Request): Promise<Response> {
         if (closed) { clearInterval(iv); return; }
         try {
           const hashData = await redis.hgetall(inboxKey);
+          const now = Date.now();
           const messages = Object.values(hashData ?? {})
+            .filter((m: any) => !m.expiresAt || m.expiresAt > now)
             .sort((a: any, b: any) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
           const hash = `${messages.length}:${messages.map((m: any) => m.id).join(",")}`;
           if (hash !== lastHash) {
             lastHash = hash;
-            const now = Date.now();
             send({
               type: "update",
               messages: messages.map((m: any) => ({
