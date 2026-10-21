@@ -35,7 +35,9 @@ export default {
   id:      "mailtm",
   name:    "mail.tm",
   domains: [DOMAIN],
-  enabled: true,
+  // mail.tm answers 500 to /accounts from Vercel's egress IPs (works from a home IP), so account
+  // creation fails in production. Re-enable if that changes.
+  enabled: false,
   // Addresses only exist once the API makes the account - there is no local part to type.
   customUsername: false,
 
