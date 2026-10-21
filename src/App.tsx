@@ -77,6 +77,16 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
+  const domainProvider = ALL_PROVIDERS.find(p => p.domains.includes(domain))
+  const usernameLocked = domainProvider?.customUsername === false
+
+  // random-only providers assign the local part, so the field shows what they will give us
+  const pickDomain = (d: string) => {
+    setDomain(d)
+    const p = ALL_PROVIDERS.find(x => x.domains.includes(d))
+    if (p?.customUsername === false) setValue(randomUsername(d))
+  }
+
   const submit = () => {
     const v = value.trim().toLowerCase()
     if (!v) return
@@ -100,12 +110,13 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
           <input
             ref={inputRef} value={value}
             onChange={e => setValue(e.target.value)}
+            readOnly={usernameLocked}
             onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
-            placeholder="username"
-            className="flex-1 bg-transparent px-3 py-2.5 text-sm font-mono focus:outline-none min-w-0"
+            placeholder={usernameLocked ? 'assigned by provider' : 'username'}
+            className={`flex-1 bg-transparent px-3 py-2.5 text-sm font-mono focus:outline-none min-w-0 ${usernameLocked ? 'text-muted-foreground cursor-not-allowed' : ''}`}
           />
           <span className="text-xs text-muted-foreground font-mono select-none px-1">@</span>
-          <select value={domain} onChange={e => setDomain(e.target.value)}
+          <select value={domain} onChange={e => pickDomain(e.target.value)}
             className="bg-transparent text-xs font-mono pr-3 py-2.5 focus:outline-none text-muted-foreground cursor-pointer">
             {ALL_PROVIDERS.filter(p => !p.createEmail).flatMap(p => p.domains).map(d => <option key={d} value={d}>{d}</option>)}
           </select>
@@ -294,6 +305,8 @@ export default function App() {
   }
   const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
   const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? email.split("@")[1] ?? DEFAULT_DOMAIN
+  const currentProvider = ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))
+  const canEditName = currentProvider?.customUsername !== false
 
   const confirmEditRef = useRef(false)
   const confirmEdit = () => {
@@ -303,7 +316,9 @@ export default function App() {
     const v = editValue.trim().toLowerCase(); if (!v) { setEditing(false); return }
     const full = v.includes('@') ? v : `${v}@${editDomain}`
     if (!DOMAINS.some(d => full.endsWith(`@${d}`))) { setEditing(false); return }
-    resetInbox(full); setEditing(false)
+    const targetProvider = ALL_PROVIDERS.find(p => p.domains.some(d => full.endsWith(`@${d}`)))
+    const finalEmail = targetProvider?.customUsername === false ? `${randomUsername(editDomain)}@${editDomain}` : full
+    resetInbox(finalEmail); setEditing(false)
   }
 
   const unread = messages.filter(m => !m.read).length
@@ -351,14 +366,21 @@ export default function App() {
               </div>
             ) : (
               <>
-                <button
-                  onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
-                  className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98]"
-                >
-                  <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
-                  <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
-                  <PencilLine className="h-3 w-3 text-muted-foreground shrink-0" />
-                </button>
+                {canEditName ? (
+                  <button
+                    onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98]"
+                  >
+                    <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
+                    <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
+                    <PencilLine className="h-3 w-3 text-muted-foreground shrink-0" />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
+                    <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
+                    <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
+                  </div>
+                )}
                 <Tooltip>
                   <TooltipTrigger aria-label="Copy address">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyEmail}>
