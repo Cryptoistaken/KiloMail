@@ -511,6 +511,7 @@ export default function App() {
             onClose={() => setCustomModal(false)}
           />
         )}
+        <Analytics />
       </div>
       <Analytics />
     </TooltipProvider>
