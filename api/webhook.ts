@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "factoryai.tech";
+const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"];
 const TTL = 2592000;
 const MAX_MESSAGES = 50;
 
@@ -39,7 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
   catch { return new Response("Invalid JSON", { status: 400 }); }
 
   const address = (body.to ?? "").toLowerCase().trim();
-  if (!address.endsWith(`@${DOMAIN}`)) return new Response("Ignored", { status: 200 });
+  if (!DOMAINS.some((d) => address.endsWith(`@${d}`))) return new Response("Ignored", { status: 200 });
 
   const id = crypto.randomUUID();
   const now = new Date();

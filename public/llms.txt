@@ -1,17 +1,35 @@
 # KiloMail
 
-> Disposable email service with real-time SSE inboxes at @factoryai.tech. No sign-up, no tracking, 30-day message retention.
+> Disposable email service with real-time SSE inboxes. Free public API — no API key, no sign-up, no rate limits, 30-day message retention.
+
+Base URL: https://kilomail.vercel.app
+Own domains: factoryai.tech, kilomail.my.id, kilosms.web.id
 
 Important notes:
 
-- Built on Vercel Edge Functions, Upstash Redis, and Cloudflare Email Workers
-- Inboxes keep mail for 30 days; expired messages are deleted automatically
+- Every endpoint is free and unauthenticated — no API key, no token, no quota, no rate limiting
+- Own domains are served by /api/inbox/*; third-party inboxes (guerrillamail, maildrop, tempmailplus, tempmailio) are served by /api/providers/<id>?action=…
+- Both return the same JSON shapes: MessageMeta for lists, MessageFull for a single message
+- Inboxes keep mail for 30 days, max 50 messages per inbox; expired messages are deleted automatically
+- Browsers may call the API directly — responses carry Access-Control-Allow-Origin: *
+- Built on Vercel Edge Functions, Upstash Redis, and Cloudflare Email Routing + Workers
 - Open source under MIT license
+
+## API
+
+- [Public API reference](https://kilomail.vercel.app/#/docs): Every endpoint, params, responses and curl examples
+- GET /api/inbox/{email}: list messages in an inbox (MessageMeta[])
+- GET /api/inbox/{email}/stream: Server-Sent Events live inbox stream
+- GET /api/inbox/{email}/{id}: full message body (MessageFull)
+- DELETE /api/inbox/{email}/{id}: delete one message
+- GET /api/providers/{provider}?action=inbox&email={email}: third-party inbox list
+- GET /api/providers/{provider}?action=read&email={email}&id={id}: third-party message body
+- POST /api/providers/{provider}?action=create: create a provider-issued address
 
 ## Docs
 
 - [README](https://github.com/Cryptoistaken/KiloMail/blob/main/README.md): Setup guide for Redis, Cloudflare, and Vercel deployment
-- [Architecture](https://github.com/Cryptoistaken/KiloMail): Cloudflare MX → Email Worker → Vercel webhook → Upstash Redis
+- [Architecture](https://github.com/Cryptoistaken/KiloMail): Cloudflare MX → Email Routing → Email Worker → Upstash Redis → SSE
 
 ## Optional
 

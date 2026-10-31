@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "factoryai.tech";
+const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"];
 const TTL = 2592000;
 const MAX_MESSAGES = 50;
 
@@ -42,14 +42,14 @@ export default async function handler(req: Request): Promise<Response> {
     body = await req.json();
   } catch {}
 
-  const to = (body.to ?? `test@${DOMAIN}`).toLowerCase().trim();
+  const to = (body.to ?? `test@${DOMAINS[0]}`).toLowerCase().trim();
   const from = body.from ?? "test-sender@gmail.com";
   const subject = body.subject ?? "Test Email from /api/test";
   const text = body.text ?? `This is a test message injected at ${new Date().toISOString()}`;
 
-  if (!to.endsWith(`@${DOMAIN}`)) {
+  if (!DOMAINS.some((d) => to.endsWith(`@${d}`))) {
     return new Response(
-      JSON.stringify({ error: `Address must end with @${DOMAIN}` }),
+      JSON.stringify({ error: `Address must end with one of: @${DOMAINS.join(", @")}` }),
       { status: 400, headers: CORS }
     );
   }

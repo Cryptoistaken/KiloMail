@@ -9,7 +9,7 @@ Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · 
 ## Architecture
 
 ```
-Email sent to anything@factoryai.tech
+Email sent to anything@factoryai.tech (or @kilomail.my.id, @kilosms.web.id)
          ↓
 Cloudflare Email Routing (catch-all → Email Worker)
          ↓
@@ -33,8 +33,8 @@ Frontend SSE stream
 ### 2. Cloudflare Email Routing
 
 1. In Cloudflare dashboard → **Email** → **Email Routing**
-2. Enable Email Routing for `factoryai.tech`
-3. Set a **catch-all** rule → action: **Send to Worker** → select `kilomail-email-worker`
+2. Enable Email Routing for each own domain (`factoryai.tech`, `kilomail.my.id`, `kilosms.web.id`)
+3. On every zone, set a **catch-all** rule → action: **Send to Worker** → select `kilomail-email-worker`
 
 ### 3. Deploy the Email Worker
 
@@ -81,7 +81,7 @@ npx vercel dev
 | `UPSTASH_REDIS_REST_TOKEN` | api/, worker/ | Redis auth |
 | `WEBHOOK_SECRET` | api/webhook.ts | Validates inbound mail from Cloudflare |
 | `TEST_MODE` | api/test.ts | Set to `1` to enable test email injection |
-| `DOMAIN` | worker/wrangler.toml | MX domain bound to the email worker |
+| `DOMAINS` | worker/wrangler.toml | Comma-separated MX domains bound to the email worker |
 
 Secrets are set via `wrangler secret put` for the worker and Vercel env vars for the API.
 
@@ -94,4 +94,5 @@ Create two files — see CLAUDE.md for the full walkthrough:
 1. `src/providers/<name>.provider.ts` — frontend plugin (auto-discovered)
 2. `api/providers/<name>.ts` — Vercel edge proxy
 
-The only shipped provider is `kilolabs` (`factoryai.tech`), which reads Upstash Redis directly.
+The own domains live in `kilolabs.provider.ts` and read Upstash Redis directly. Everything else is a
+third-party inbox behind an `api/providers/<id>.ts` proxy. Public API reference: `#/docs` on the live site.

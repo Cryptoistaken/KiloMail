@@ -3,8 +3,10 @@ import PostalMime from "postal-mime";
 export interface Env {
   UPSTASH_REDIS_REST_URL: string;
   UPSTASH_REDIS_REST_TOKEN: string;
-  DOMAIN: string;
+  DOMAINS: string;
 }
+
+const DEFAULT_DOMAINS = "factoryai.tech";
 
 const TTL = 2592000; // 30 days
 const MAX_MESSAGES = 50;
@@ -15,7 +17,11 @@ export default {
     const parsed = await PostalMime.parse(raw);
 
     const to = message.to.toLowerCase().trim();
-    if (!to.endsWith(`@${env.DOMAIN}`)) return;
+    const domains = (env.DOMAINS ?? DEFAULT_DOMAINS)
+      .split(",")
+      .map((d) => d.trim().toLowerCase())
+      .filter(Boolean);
+    if (!domains.some((d) => to.endsWith(`@${d}`))) return;
 
     const id = crypto.randomUUID();
     const now = Date.now();

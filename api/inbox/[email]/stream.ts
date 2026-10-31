@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "factoryai.tech";
+const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"];
 const CHECK_INTERVAL = 2000;
 const MAX_DURATION = 295_000;
 
@@ -17,7 +17,7 @@ export default async function handler(req: Request): Promise<Response> {
   const parts = new URL(req.url).pathname.split("/").filter(Boolean);
   const email = decodeURIComponent(parts[2] ?? "").toLowerCase().trim();
 
-  if (!email.endsWith(`@${DOMAIN}`)) {
+  if (!DOMAINS.some((d) => email.endsWith(`@${d}`))) {
     return new Response("Invalid", { status: 400 });
   }
 

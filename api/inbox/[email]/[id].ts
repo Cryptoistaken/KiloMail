@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAIN = "factoryai.tech";
+const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"];
 const CORS = {
   "Content-Type": "application/json",
   "Cache-Control": "no-store",
@@ -34,7 +34,7 @@ export default async function handler(req: Request): Promise<Response> {
   const email     = decodeURIComponent(parts[2] ?? "").toLowerCase().trim();
   const messageId = decodeURIComponent(parts[3] ?? "");
 
-  if (!email.endsWith(`@${DOMAIN}`) || !messageId) {
+  if (!DOMAINS.some((d) => email.endsWith(`@${d}`)) || !messageId) {
     return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400, headers: CORS });
   }
 

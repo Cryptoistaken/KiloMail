@@ -5,7 +5,10 @@ import { Meteors } from '@/components/ui/meteors'
 import { DottedMap } from '@/components/ui/dotted-map'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import { DOMAIN } from '@/lib/types'
+import {  ALL_PROVIDERS } from '@/providers/registry'
+
+// Own domains (the ones we host) — same source as the "Own" tab in the app.
+const OWN_DOMAINS = ALL_PROVIDERS.filter(p => p.id === 'kilolabs').flatMap(p => p.domains)
 import { navigate } from '@/hooks/useHashRoute'
 import { Background } from '@/app/components/Background'
 import { Logo } from '@/app/components/Logo'
@@ -19,7 +22,7 @@ const FEATURES = [
   { icon: <Sparkles className="h-4 w-4" />,  title: 'Open source',       desc: 'MIT licensed. Self-host on Vercel + Upstash in minutes.' },
 ]
 
-const TRUST = ['factoryai.tech domain', 'Cloudflare MX', 'Upstash Redis', 'Vercel Edge']
+const TRUST = [`${OWN_DOMAINS.length} own domains`, 'Cloudflare MX', 'Upstash Redis', 'Vercel Edge']
 
 interface LandingProps { onLaunch: () => void }
 
@@ -70,9 +73,11 @@ export function Landing({ onLaunch }: LandingProps) {
               </h1>
               <p className="mt-6 max-w-[480px] text-[1.05rem] leading-relaxed text-muted-foreground">
                 KiloMail gives you a live inbox at{' '}
-                <code className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
-                  @{DOMAIN}
-                </code>
+                {OWN_DOMAINS.map(d => (
+                  <code key={d} className="mr-1 rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+                    @{d}
+                  </code>
+                ))}
                 . No sign-up. No tracking. Just mail.
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-3">

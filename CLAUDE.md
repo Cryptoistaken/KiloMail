@@ -36,10 +36,16 @@ src/
   providers/
     types.ts                     ProviderPlugin interface — do not change without updating all providers
     registry.ts                  auto-discovery via import.meta.glob — NEVER EDIT
-    kilolabs.provider.ts         factoryai.tech | SSE | delete supported
+    kilolabs.provider.ts         OWN domains (factoryai.tech, kilomail.my.id, kilosms.web.id) | SSE | delete supported
+    guerrillamail.provider.ts    guerrillamail.com | sharklasers.com | grr.la | spam4.me — sid_token kept in localStorage
+    maildrop.provider.ts         maildrop.cc — GraphQL upstream
+    tempmailplus.provider.ts     mailto.plus | fexbox.org | fexpost.com | fextemp.com | merepost.com
+    tempmailio.provider.ts       7 domains, server-assigned addresses (createEmail)
+    mailtm.provider.ts           maxxspace.com — DISABLED (enabled: false), see note in the file
   app/
     views/
       Landing.tsx                marketing page shown to first-time visitors
+      DocsView.tsx               public API reference at #/docs — free, no key, no rate limits
       InboxView.tsx              message list sidebar
       MessageView.tsx            message body pane (iframe for HTML, pre for text)
       HistoryView.tsx            previously used addresses
@@ -50,12 +56,12 @@ src/
 
 api/
   inbox/
-    [email].ts                   GET inbox list from Redis (kilolabs only)
+    [email].ts                   GET inbox list from Redis (own domains only)
     [email]/
-      stream                     SSE stream (kilolabs only)
-      [id].ts                    GET + DELETE single message (kilolabs only)
+      stream                     SSE stream (own domains only)
+      [id].ts                    GET + DELETE single message (own domains only)
   providers/
-    hd.ts                        proxy for hotmail9.com
+    <id>.ts                      one edge proxy per third-party provider (guerrillamail, maildrop, …)
   webhook.ts                     receives inbound mail from Cloudflare, writes to Redis
   test.ts                        inject a fake email (TEST_MODE=1 only)
 
@@ -101,6 +107,16 @@ const DOMAIN = "factoryai.tech"     // primary own domain
 ## Provider plugin system
 
 Providers are **auto-discovered** via `import.meta.glob` in `registry.ts`. Do not touch that file.
+
+**Own vs third-party:** `App.tsx` treats the `kilolabs` provider as ours — its domains are the "Own" tab,
+every other domain lands in the "3rd party" tab (same split in `DocsView`). Adding a domain to
+`kilolabs.provider.ts` is enough for the UI; mail only arrives once the Cloudflare worker and the
+`api/inbox/*` guards accept it too.
+
+**Public API docs:** `#/docs` renders `DocsView.tsx` — a standalone page (own route, back button, linked
+from the Landing page) that documents every endpoint and builds the provider table from `ALL_PROVIDERS`,
+so it never goes stale. Keep the "free · no API key · no rate limits" claim true: there is no rate
+limiting anywhere in the code today.
 
 ### Adding a provider — 2 files
 
@@ -463,7 +479,7 @@ Health job needs secret: `KILOMAIL_BASE_URL` (e.g. `https://kilomail.vercel.app`
 
 - `timeAgo` is computed at fetch time and not re-computed on re-render. Stale for long-lived sessions — acceptable for a disposable inbox tool.
 - `extractCode()` in `App.tsx` prefetches OTP codes from message bodies and caches them in `bodyCodes` so the inbox list can show them without opening the message.
-- `Landing.tsx` imports `DOMAIN` from `@/lib/types` — make sure that export exists before touching `types.ts`.
+- `Landing.tsx` builds its own-domain chips from `@/providers/registry` (the `kilolabs` provider), so adding an own domain needs no edit there. `src/lib/types.ts` no longer exports a single `DOMAIN`.
 - `useTheme.ts` lives in `src/hooks/` only. The copy that was in `src/lib/` has been deleted.
 - `SettingsView.tsx` has been deleted — it was never wired up. If you want a settings panel, add `"settings"` back to the `Panel` type and render it in `App.tsx`.
 - `hd.provider.ts` polling: the poll loop inlines its own fetch rather than calling `this.fetchInbox` — `this` is not available in an object literal passed to `satisfies`.

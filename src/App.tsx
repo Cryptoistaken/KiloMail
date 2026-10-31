@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, X } from 'lucide-react'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, RefreshCw, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
@@ -19,6 +19,9 @@ const MessageView = lazy(() =>
 const HistoryView = lazy(() =>
   import('@/app/views/HistoryView').then(m => ({ default: m.HistoryView }))
 )
+const DocsView = lazy(() =>
+  import('@/app/views/DocsView').then(m => ({ default: m.DocsView }))
+)
 import { Background }  from '@/app/components/Background'
 import { Logo }        from '@/app/components/Logo'
 
@@ -32,6 +35,13 @@ import { useHashRoute, navigate } from '@/hooks/useHashRoute'
 import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 
+// "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
+// Every other domain belongs to a third-party inbox that the api/providers proxies talk to.
+const OWN_DOMAINS = ALL_PROVIDERS.filter(p => p.id === 'kilolabs').flatMap(p => p.domains)
+const THIRD_DOMAINS = DOMAINS.filter(d => !OWN_DOMAINS.includes(d))
+// New visitors land on an own domain — it is the one with 30-day retention, SSE and delete.
+const DEFAULT_OWN_DOMAIN = OWN_DOMAINS[0] ?? DEFAULT_DOMAIN
+
 function randomUsername(domain: string): string {
   try {
     const p = getProvider(`x@${domain}`)
@@ -40,7 +50,7 @@ function randomUsername(domain: string): string {
   return generateUsername()
 }
 
-function randomInbox(domain: string = DEFAULT_DOMAIN): string {
+function randomInbox(domain: string = DEFAULT_OWN_DOMAIN): string {
   return `${randomUsername(domain)}@${domain}`
 }
 
@@ -73,7 +83,7 @@ function extractCode(text: string, html: string): string | null {
 
 function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) => void; onClose: () => void }) {
   const [value, setValue] = useState('')
-  const [domain, setDomain] = useState(DEFAULT_DOMAIN)
+  const [domain, setDomain] = useState(DEFAULT_OWN_DOMAIN)
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
@@ -148,6 +158,8 @@ export default function App() {
   const [newMenuOpen,  setNewMenuOpen]  = useState(false)
   const [customModal,  setCustomModal]  = useState(false)
   const [bodyCodes,    setBodyCodes]    = useState<Record<string, string>>({})
+  const [menuTab,      setMenuTab]      = useState<'own' | 'third'>('own')
+  const [spinning,     setSpinning]     = useState(false)
 
   const msgCache   = useRef<Map<string, MessageFull>>(new Map())
   const readIds    = useRef<Set<string>>(new Set())
@@ -304,6 +316,14 @@ export default function App() {
     }
   }
   const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
+
+  // One click = a fresh address on the domain we are already on (history is saved by the inbox effect).
+  const spinEmail = () => {
+    if (spinning) return
+    setSpinning(true)
+    setTimeout(() => setSpinning(false), 500)
+    newInbox(currentDomain)
+  }
   const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? email.split("@")[1] ?? DEFAULT_DOMAIN
   const currentProvider = ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))
   const canEditName = currentProvider?.customUsername !== false
@@ -320,6 +340,16 @@ export default function App() {
     const finalEmail = targetProvider?.customUsername === false ? `${randomUsername(editDomain)}@${editDomain}` : full
     resetInbox(finalEmail); setEditing(false)
   }
+
+  if (route === '/docs')
+    return (
+      <div className="relative flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+        <Suspense fallback={<div className="flex h-dvh items-center justify-center bg-background" />}>
+          <DocsView />
+        </Suspense>
+        <Analytics />
+      </div>
+    )
 
   const unread = messages.filter(m => !m.read).length
 
@@ -339,7 +369,7 @@ export default function App() {
         <Background />
 
         <header className="relative z-10 flex items-center gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md sm:px-5">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
+          <button onClick={() => navigate('/')} className="hidden sm:flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
             <Logo variant="icon" className="h-7 w-7" />
             <span className="hidden sm:block text-sm font-semibold tracking-tight">KiloMail</span>
           </button>
@@ -366,6 +396,14 @@ export default function App() {
               </div>
             ) : (
               <>
+                <Tooltip>
+                  <TooltipTrigger aria-label="New address on this domain" aria-disabled={spinning}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" disabled={spinning} onClick={spinEmail}>
+                      <RefreshCw className={cn('h-4 w-4 transition-transform duration-500', spinning && 'rotate-[360deg]')} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>New address · @{currentDomain}</TooltipContent>
+                </Tooltip>
                 {canEditName ? (
                   <button
                     onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
@@ -422,22 +460,33 @@ export default function App() {
               ref={newMenuRef}
               className="absolute bottom-[calc(100%-4px)] left-1/2 -translate-x-1/2 z-50 min-w-[240px] rounded-xl border border-border bg-background/95 shadow-xl backdrop-blur-md overflow-hidden"
             >
-              <p className="px-3 pt-3 pb-1.5 text-xs font-semibold text-foreground">New random inbox on…</p>
-              {DOMAINS.map(d => {
-                const tag = 'own'
-                return (
+              <p className="px-3 pt-3 pb-2 text-xs font-semibold text-foreground">New random inbox on…</p>
+              <div className="mx-2 mb-1 flex gap-0.5 rounded-lg bg-muted p-0.5">
+                {([['own', `Own (${OWN_DOMAINS.length})`], ['third', `3rd party (${THIRD_DOMAINS.length})`]] as const).map(([key, label]) => (
+                  <button key={key}
+                    onClick={e => { e.stopPropagation(); setMenuTab(key) }}
+                    className={cn('flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                      menuTab === key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+                  >{label}</button>
+                ))}
+              </div>
+              <div className="max-h-[52vh] overflow-y-auto">
+                {(menuTab === 'own' ? OWN_DOMAINS : THIRD_DOMAINS).map(d => (
                   <button key={d}
                     className="flex w-full items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-muted transition-colors"
                     onClick={e => { e.stopPropagation(); setNewMenuOpen(false); newInbox(d) }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Shuffle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="font-mono text-sm font-medium">@{d}</span>
+                      <span className="truncate font-mono text-sm font-medium">@{d}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{tag}</span>
+                    <span className={cn('shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px]',
+                      menuTab === 'own' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground')}>
+                      {menuTab === 'own' ? 'own' : '3rd party'}
+                    </span>
                   </button>
-                )
-              })}
+                ))}
+              </div>
               <div className="h-px bg-border mx-2 my-1" />
               <button
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 pb-3 hover:bg-muted transition-colors"

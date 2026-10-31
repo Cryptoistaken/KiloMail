@@ -1,10 +1,22 @@
 import { Background } from '@/app/components/Background'
 import {
   Zap, Shield, Clock, Globe, RefreshCw, Sparkles,
-  Terminal, Copy, Check, ExternalLink, BookOpen,
-  Inbox, History, Settings,
+  Terminal, Copy, Check, ExternalLink, BookOpen, ArrowLeft,
 } from 'lucide-react'
 import { useState } from 'react'
+import { ALL_PROVIDERS } from '@/providers/registry'
+import type { ProviderPlugin } from '@/providers/types'
+import { navigate } from '@/hooks/useHashRoute'
+
+const BASE = 'https://kilomail.vercel.app'
+
+// "Own" = domains we host (Cloudflare worker -> Redis). The rest are third-party inboxes
+// reached through /api/providers/:provider proxies.
+const OWN_DOMAINS = ALL_PROVIDERS.filter(p => p.id === 'kilolabs').flatMap(p => p.domains)
+
+function providerActions(p: ProviderPlugin): string {
+  return ['inbox', ...(p.createEmail ? ['create'] : []), 'read', ...(p.deleteMessage ? ['delete'] : [])].join(' · ')
+}
 
 function CopyBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
@@ -115,19 +127,12 @@ function Endpoint({
 }
 
 const FEATURES = [
-  { icon: <Zap className="h-4 w-4 text-primary" />, title: 'Instant delivery', desc: 'Cloudflare receives SMTP, writes to Upstash Redis, SSE pushes to the browser — all under 1 second.' },
-  { icon: <Shield className="h-4 w-4 text-primary" />, title: 'Zero sign-up', desc: 'No account, no OAuth, no tracking. Generate an @factoryai.tech address and start receiving.' },
+  { icon: <Zap className="h-4 w-4 text-primary" />, title: 'Free, no key', desc: 'Every endpoint is open. No signup, no API key, no token, no rate limits — call it as much as you like.' },
+  { icon: <Shield className="h-4 w-4 text-primary" />, title: 'Zero sign-up', desc: 'No account, no OAuth, no tracking. Pick an address and start receiving mail on it.' },
+  { icon: <Globe className="h-4 w-4 text-primary" />, title: 'Own + third-party', desc: 'Addresses on our own domains, plus proxies for popular third-party inboxes — same JSON shape for all.' },
   { icon: <Clock className="h-4 w-4 text-primary" />, title: '30-day retention', desc: 'Every message is kept for 30 days, then removed automatically. No manual cleanup.' },
-  { icon: <Globe className="h-4 w-4 text-primary" />, title: 'SSE live stream', desc: 'Real-time push via Server-Sent Events. No polling. The inbox updates the moment mail arrives.' },
-  { icon: <RefreshCw className="h-4 w-4 text-primary" />, title: 'Instant regeneration', desc: 'Click once to generate a fresh random address. Old address expires on its own.' },
-  { icon: <Sparkles className="h-4 w-4 text-primary" />, title: 'Open source (MIT)', desc: 'Full source on GitHub. Self-host on Vercel + Upstash in under 5 minutes.' },
-]
-
-const DOCK_ITEMS = [
-  { icon: <Inbox className="h-4 w-4" />, label: 'Inbox', desc: 'Your current inbox. Shows unread count badge.' },
-  { icon: <History className="h-4 w-4" />, label: 'History', desc: 'Last 50 addresses you\'ve used, with total mail count each.' },
-  { icon: <BookOpen className="h-4 w-4" />, label: 'Docs', desc: 'You are here.' },
-  { icon: <Settings className="h-4 w-4" />, label: 'Settings', desc: 'Regenerate address, view current inbox address.' },
+  { icon: <RefreshCw className="h-4 w-4 text-primary" />, title: 'SSE live stream', desc: 'Real-time push via Server-Sent Events on own domains. No polling, no key.' },
+  { icon: <Sparkles className="h-4 w-4 text-primary" />, title: 'Open source (MIT)', desc: 'Full source on GitHub. Self-host on Vercel + Cloudflare + Upstash in under 5 minutes.' },
 ]
 
 export function DocsView() {
@@ -135,16 +140,36 @@ export function DocsView() {
     <div className="relative flex-1 overflow-y-auto">
       <Background />
       <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
+        <button onClick={() => navigate('/inbox')}
+          className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to inbox
+        </button>
+
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-primary" />
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Documentation</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">KiloMail API Reference</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">KiloMail public API</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Base URL: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">https://kilomail.vercel.app</code>
-            {' · '}Domain: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">factoryai.tech</code>
+            Base URL: <code className="rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">{BASE}</code>
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Domains:{' '}
+            {OWN_DOMAINS.map(d => (
+              <code key={d} className="mr-1 rounded border border-border bg-muted px-1 py-0.5 text-xs font-mono">{d}</code>
+            ))}
+          </p>
+
+          <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3 backdrop-blur-sm">
+            <p className="text-xs font-semibold text-foreground">Free · public · no API key · no rate limits</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Every endpoint below is open — no signup, no token, no quota. Pick any address on any domain we
+              handle and start reading mail. <code className="rounded bg-muted px-1 font-mono">curl</code> works
+              from anywhere; browsers get CORS <code className="rounded bg-muted px-1 font-mono">*</code>.
+            </p>
+          </div>
+
           <a href="https://github.com/Cryptoistaken" target="_blank" rel="noopener noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <ExternalLink className="h-3 w-3" /> View on GitHub
@@ -193,10 +218,14 @@ export function DocsView() {
           </div>
         </Section>
 
-        <Section title="Endpoints">
+        <Section title="Own domains">
+          <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+            Mail sent to any of <code className="rounded border border-border bg-muted px-1 font-mono">{OWN_DOMAINS.join(', ')}</code> is
+            stored for 30 days and served by these endpoints. No key, no limit.
+          </p>
           <Endpoint method="GET" path="/api/inbox/:email"
             desc="List all messages in an inbox. Returns metadata only — no body content. Returns [] for unknown addresses. Never returns 404."
-            params={[{ name: ':email', type: 'string', desc: 'URL-encoded address e.g. mybox%40factoryai.tech' }]}
+            params={[{ name: ':email', type: 'string', desc: `URL-encoded address e.g. mybox%40${OWN_DOMAINS[0]}` }]}
             headers={[{ name: 'If-None-Match', required: 'No', desc: 'Pass a previous ETag value; returns 304 if inbox is unchanged' }]}
             response={`[\n  {\n    "id": "3f2a1b4c-...",\n    "from": "sender@example.com",\n    "subject": "Your OTP code",\n    "receivedAt": "2026-03-15T04:58:16.053Z",\n    "read": false,\n    "timeAgo": "2m ago"\n  }\n]`}
             extra={
@@ -208,7 +237,7 @@ export function DocsView() {
                 ]} />
               </div>
             }
-            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech`}
+            curl={`curl ${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}`}
           />
           <Endpoint method="GET" path="/api/inbox/:email/stream"
             desc="Real-time Server-Sent Events stream. Pushes full inbox state whenever it changes. Checks Redis every 800ms, emits only on actual changes. Auto-closes after ~295s — the browser EventSource reconnects automatically."
@@ -223,7 +252,7 @@ export function DocsView() {
                 ]} />
               </div>
             }
-            curl={`curl -N https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/stream`}
+            curl={`curl -N ${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}/stream`}
           />
           <Endpoint method="GET" path="/api/inbox/:email/:id"
             desc="Fetch the full body of a single message. Read state is not written back to the server — it's client-side only."
@@ -236,7 +265,7 @@ export function DocsView() {
               { status: '404', body: '{ "error": "Not found" }', reason: 'Message ID not in inbox' },
               { status: '400', body: '{ "error": "Invalid request" }', reason: 'Missing or malformed params' },
             ]}
-            curl={`curl https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/3f2a1b4c-...`}
+            curl={`curl ${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}/3f2a1b4c-...`}
           />
           <Endpoint method="DELETE" path="/api/inbox/:email/:id"
             desc="Permanently delete a message. Removes metadata and body atomically. Inbox TTL is preserved."
@@ -249,15 +278,72 @@ export function DocsView() {
               { status: '404', body: '{ "error": "Not found" }', reason: 'Message ID not in inbox' },
               { status: '400', body: '{ "error": "Invalid request" }', reason: 'Missing or malformed params' },
             ]}
-            curl={`curl -X DELETE "https://kilomail.vercel.app/api/inbox/mybox%40factoryai.tech/3f2a1b4c-..."`}
+            curl={`curl -X DELETE "${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}/3f2a1b4c-..."`}
+          />
+        </Section>
+
+        <Section title="Third-party inboxes">
+          <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+            One proxy per external provider, same free/no-key rules. Every action returns the same{' '}
+            <code className="rounded border border-border bg-muted px-1 font-mono">MessageMeta</code> /{' '}
+            <code className="rounded border border-border bg-muted px-1 font-mono">MessageFull</code> shapes as above,
+            so readers written for own domains work unchanged. Only <code className="rounded border border-border bg-muted px-1 font-mono">action=</code> varies.
+          </p>
+
+          <Table headers={['Provider', 'Domains', 'Actions']} rows={
+            ALL_PROVIDERS.filter(p => p.id !== 'kilolabs').map(p => [
+              <span className="font-mono">{p.id}</span>,
+              <span className="font-mono text-[11px]">{p.domains.join(', ')}</span>,
+              <span className="font-mono text-[11px]">{providerActions(p)}</span>,
+            ])
+          } />
+
+          <Endpoint method="GET" path="/api/providers/:provider?action=inbox&email=:email"
+            desc="List messages in a third-party inbox. Never errors on an empty or unknown address — returns []."
+            params={[
+              { name: ':provider', type: 'string', desc: 'Provider id from the table above' },
+              { name: 'email', type: 'string', desc: 'Full address to read, any local part' },
+            ]}
+            response={`[\n  { "id": "mCuvW71Ssy", "from": "sender@example.com", "subject": "Hi", "receivedAt": "2026-10-21T06:07:56.280Z", "read": false, "timeAgo": "1m ago" }\n]`}
+            curl={`curl "${BASE}/api/providers/maildrop?action=inbox&email=mybox%40maildrop.cc"`}
+          />
+          <Endpoint method="GET" path="/api/providers/:provider?action=read&email=:email&id=:id"
+            desc="Full body of one message, including text and html."
+            params={[
+              { name: ':provider', type: 'string', desc: 'Provider id' },
+              { name: 'email', type: 'string', desc: 'Address the message belongs to' },
+              { name: 'id', type: 'string', desc: 'Message id from action=inbox' },
+            ]}
+            response={`{ "id": "mCuvW71Ssy", "from": "sender@example.com", "subject": "Hi", "receivedAt": "2026-10-21T06:07:56.280Z", "read": true, "text": "...", "html": "..." }`}
+            curl={`curl "${BASE}/api/providers/maildrop?action=read&email=mybox%40maildrop.cc&id=mCuvW71Ssy"`}
+          />
+          <Endpoint method="POST" path="/api/providers/:provider?action=create"
+            desc="Providers that issue addresses (mail.tm, temp-mail.io) create the mailbox first; the address only exists after this call. Providers marked with create in the table also expose createEmail in the web UI."
+            params={[{ name: 'name', type: 'string', desc: 'Optional local part to claim (temp-mail.io)' }, { name: 'domain', type: 'string', desc: 'Optional domain to use' }]}
+            headers={[{ name: 'Content-Type', required: 'Yes*', desc: '*Only for providers that take a JSON body (mail.tm: { address, password })' }]}
+            response={`{ "email": "mybox@yzcalo.com" }`}
+            curl={`curl -X POST "${BASE}/api/providers/tempmailio?action=create&domain=yzcalo.com&name=mybox"`}
+          />
+          <Endpoint method="DELETE" path="/api/providers/:provider?action=delete&email=:email&id=:id"
+            desc="Delete one message where the provider supports it (see Actions in the table)."
+            params={[
+              { name: ':provider', type: 'string', desc: 'Provider id' },
+              { name: 'email', type: 'string', desc: 'Address the message belongs to' },
+              { name: 'id', type: 'string', desc: 'Message id' },
+            ]}
+            response={`{ "ok": true }`}
+            errors={[{ status: '501', reason: 'Provider has no delete route — check the Actions column' }]}
+            curl={`curl -X DELETE "${BASE}/api/providers/maildrop?action=delete&email=mybox%40maildrop.cc&id=mCuvW71Ssy"`}
           />
         </Section>
 
         <Section title="Limits">
           <Table headers={['Property', 'Value']} rows={[
-            ['Inbox TTL', '30 days from receipt — expired messages are filtered and pruned'],
+            ['Rate limits', 'None — no API key, no quota, no throttling'],
+            ['API key', 'Not required for any endpoint'],
+            ['Retention', '30 days from receipt — expired messages are filtered and pruned'],
             ['Max messages', '50 per inbox — oldest trimmed first on overflow'],
-            ['Domain', 'Only @factoryai.tech accepted'],
+            ['Own domains', OWN_DOMAINS.join(', ')],
             ['Read state', 'Client-side only — no server write on message open'],
             ['SSE check interval', '800ms — emits only when inbox changes'],
             ['SSE max duration', '~295s — client must reconnect'],
@@ -269,42 +355,40 @@ export function DocsView() {
           <CopyBlock code={`{ "error": "Description of what went wrong" }`} />
           <div className="mt-3">
             <Table headers={['Status', 'Meaning']} rows={[
-              [<code className="font-mono">400</code>, 'Bad request'],
-              [<code className="font-mono">404</code>, 'Not found'],
+              [<code className="font-mono">400</code>, 'Bad request — missing email/id/action'],
+              [<code className="font-mono">404</code>, 'Message not found in that inbox'],
               [<code className="font-mono">405</code>, 'Method not allowed'],
+              [<code className="font-mono">501</code>, 'Provider does not support this action (e.g. delete)'],
+              [<code className="font-mono">502</code>, 'Upstream provider refused or failed the call'],
             ]} />
           </div>
         </Section>
 
         <Section title="Quick reference">
-          <CopyBlock code={`GET    /api/inbox/:email         → MessageMeta[]   List inbox\nGET    /api/inbox/:email/stream  → SSE stream      Real-time updates\nGET    /api/inbox/:email/:id     → MessageFull     Fetch message body\nDELETE /api/inbox/:email/:id     → { ok: true }    Delete message`} />
-        </Section>
+          <CopyBlock code={`# own domains — 30-day storage            -> ${OWN_DOMAINS.join(', ')}
+GET    /api/inbox/:email         → MessageMeta[]   List inbox
+GET    /api/inbox/:email/stream  → SSE stream      Real-time updates
+GET    /api/inbox/:email/:id     → MessageFull     Fetch message body
+DELETE /api/inbox/:email/:id     → { ok: true }    Delete message
 
-        <Section title="Navigation (Dock)">
-          <div className="space-y-2">
-            {DOCK_ITEMS.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/50 px-3 py-2.5 backdrop-blur-sm">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground/70">
-                  {item.icon}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold">{item.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+# third-party inboxes — free, no key, same JSON
+GET    /api/providers/:p?action=inbox&email=:e
+GET    /api/providers/:p?action=read&email=:e&id=:i
+POST   /api/providers/:p?action=create
+DELETE /api/providers/:p?action=delete&email=:e&id=:i`} />
         </Section>
 
         <Section title="Self-hosting">
           <p className="mb-3 text-xs text-muted-foreground leading-relaxed">
             KiloMail runs on Vercel (Edge Functions) + Upstash Redis + a Cloudflare Email Worker. Clone the repo and set these environment variables:
           </p>
-          <CopyBlock code={`UPSTASH_REDIS_REST_URL=https://your-db.upstash.io\nUPSTASH_REDIS_REST_TOKEN=your_token\nCF_WORKER_SECRET=your_shared_secret`} />
+          <CopyBlock code={`UPSTASH_REDIS_REST_URL=https://your-db.upstash.io\nUPSTASH_REDIS_REST_TOKEN=your_token\nWEBHOOK_SECRET=your_shared_secret`} />
           <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-            Point your domain's MX record to Cloudflare Email Routing, then set the catch-all route to forward to
-            the included <code className="rounded border border-border bg-muted px-1 text-[11px] font-mono">worker/index.ts</code>.
-            Deploy the Vercel project and you're done.
+            In <code className="rounded border border-border bg-muted px-1 text-[11px] font-mono">worker/wrangler.toml</code> set{' '}
+            <code className="rounded border border-border bg-muted px-1 text-[11px] font-mono">DOMAINS</code> to your own domains, enable Cloudflare
+            Email Routing on each zone, and point its catch-all route at the included{' '}
+            <code className="rounded border border-border bg-muted px-1 text-[11px] font-mono">worker/index.ts</code>.
+            Deploy the worker, then the Vercel project — new domains are picked up automatically.
           </p>
         </Section>
 
