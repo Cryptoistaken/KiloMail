@@ -159,7 +159,7 @@ export default function App() {
   const [customModal,  setCustomModal]  = useState(false)
   const [bodyCodes,    setBodyCodes]    = useState<Record<string, string>>({})
   const [menuTab,      setMenuTab]      = useState<'own' | 'third'>('own')
-  const [spinning,     setSpinning]     = useState(false)
+  const [generating,   setGenerating]   = useState(false)
   const [refreshing,   setRefreshing]   = useState(false)
 
   const msgCache   = useRef<Map<string, MessageFull>>(new Map())
@@ -319,10 +319,11 @@ export default function App() {
   const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
 
   // One click = a fresh address on the domain we are already on (history is saved by the inbox effect).
+  // No spinning icon here — the address itself animates in, which is the real feedback.
   const spinEmail = () => {
-    if (spinning) return
-    setSpinning(true)
-    setTimeout(() => setSpinning(false), 500)
+    if (generating) return
+    setGenerating(true)
+    setTimeout(() => setGenerating(false), 500)
     newInbox(currentDomain)
   }
 
@@ -410,24 +411,27 @@ export default function App() {
             ) : (
               <>
                 <Tooltip>
-                  <TooltipTrigger aria-label="New address on this domain" aria-disabled={spinning}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" disabled={spinning} onClick={spinEmail}>
-                      <Shuffle className={cn('h-4 w-4', spinning && 'animate-spin')} />
+                  <TooltipTrigger aria-label="New address on this domain">
+                    <Button variant="ghost" size="icon"
+                      className="h-8 w-8 shrink-0 transition-transform active:scale-90"
+                      disabled={generating} onClick={spinEmail}>
+                      <Shuffle className={cn('h-4 w-4', generating && 'opacity-50')} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>New address · @{currentDomain}</TooltipContent>
                 </Tooltip>
                 {canEditName ? (
                   <button
+                    key={email}
                     onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
-                    className="flex w-[15rem] min-w-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98] sm:w-[19rem]"
+                    className="flex w-[15rem] min-w-0 animate-in fade-in-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 duration-200 transition-colors hover:bg-muted active:scale-[0.98] sm:w-[19rem]"
                   >
                     <span className="min-w-0 flex-1 truncate text-left font-mono text-sm">{email.split('@')[0]}</span>
                     <span className="shrink-0 font-mono text-xs text-muted-foreground">@{currentDomain}</span>
                     <PencilLine className="h-3 w-3 shrink-0 text-muted-foreground" />
                   </button>
                 ) : (
-                  <div className="flex w-[15rem] min-w-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 sm:w-[19rem]">
+                  <div key={email} className="flex w-[15rem] min-w-0 animate-in fade-in-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 duration-200 sm:w-[19rem]">
                     <span className="min-w-0 flex-1 truncate text-left font-mono text-sm">{email.split('@')[0]}</span>
                     <span className="shrink-0 font-mono text-xs text-muted-foreground">@{currentDomain}</span>
                   </div>
