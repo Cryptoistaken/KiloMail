@@ -24,9 +24,10 @@ Frontend SSE stream
 
 ## Setup
 
-Public URL: **https://kilomail.tech** (`https://kilomail.vercel.app` keeps working as the Vercel
-production alias). Every API call in the frontend is same-origin (`/api/...`), so the app works on
-any host it is opened on — nothing to change in code when a domain is added.
+Public URL: **https://kilomail.tech** — a Cloudflare Pages project (`kilomail`) that builds from this
+repo and serves both the site and the API. `https://kilomail.vercel.app` serves the same app as a
+backup. Every API call in the frontend is same-origin (`/api/...`), so the app works on any host it is
+opened on — nothing to change in code when a domain is added.
 
 ### 1. Upstash Redis
 
@@ -50,7 +51,16 @@ wrangler secret put UPSTASH_REDIS_REST_TOKEN
 wrangler deploy
 ```
 
-### 4. Deploy to Vercel
+### 4. Deploy the app
+
+**Cloudflare Pages** (primary — serves `kilomail.tech`):
+
+1. Pages project `kilomail` is connected to this repo; build command `npm run build`, output `dist`
+2. Add the environment variables `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `WEBHOOK_SECRET` and `NODE_VERSION=22`
+3. `nodejs_compat` is enabled so the `api/` handlers can read `process.env`
+4. `functions/api/[[path]].ts` routes `/api/*` to those handlers
+
+**Vercel** (backup — serves `kilomail.vercel.app`):
 
 ```bash
 cd ..

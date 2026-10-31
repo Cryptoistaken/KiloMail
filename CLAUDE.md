@@ -12,7 +12,7 @@ Personal project — full rewrites are fine, no public users to protect.
 | Frontend | React 19, TypeScript, Vite, Tailwind v4 |
 | Routing | Hash router (`#/inbox`, `#/`) — `src/hooks/useHashRoute.ts` |
 | Styling | Tailwind v4 + shadcn/ui components in `src/components/ui/` |
-| API | Vercel edge functions in `api/` (no Express, no Node runtime unless specified) |
+| API | `api/` — plain `Request → Response` handlers, served by Vercel edge functions **and** Cloudflare Pages (`functions/api/[[path]].ts` router) |
 | Storage | Upstash Redis — hash per inbox, body blobs keyed separately |
 | Email ingest | Cloudflare Worker (`worker/`) receives MX, writes to Redis |
 | CI | `.github/workflows/ci.yml` — type-check + lint + build on PRs, provider health on schedule |
@@ -64,6 +64,12 @@ api/
     <id>.ts                      one edge proxy per third-party provider (guerrillamail, maildrop, …)
   webhook.ts                     receives inbound mail from Cloudflare, writes to Redis
   test.ts                        inject a fake email (TEST_MODE=1 only)
+
+functions/
+  api/
+    [[path]].ts                  Cloudflare Pages router — dispatches /api/* to the handlers above.
+                                 The api files parse the URL themselves, so nothing is duplicated;
+                                 the router only maps paths and exposes env to process.env.
 
 worker/
   index.ts                       Cloudflare Email Worker — parses MIME, writes to Redis
@@ -118,12 +124,26 @@ from the Landing page) that documents every endpoint and builds the provider tab
 so it never goes stale. Keep the "free · no API key · no rate limits" claim true: there is no rate
 limiting anywhere in the code today.
 
-### Adding a provider — 2 files
+### Adding a provider — 3 files
 
 1. `src/providers/<name>.provider.ts` — frontend plugin
-2. `api/providers/<name>.ts` — Vercel edge proxy
+2. `api/providers/<name>.ts` — the proxy handler
+3. one line in the `PROVIDERS` map in `functions/api/[[path]].ts` (Pages routing needs a literal import)
 
-Drop both files, redeploy. That's it.
+Drop them, redeploy. That's it.
+
+### Deploying
+
+Two independent targets, both auto-build on push to `main`:
+
+| Target | Serves | How |
+|---|---|---|
+| Cloudflare Pages `kilomail` | site + API at **kilomail.tech** | git build (`npm run build` → `dist`) + `functions/`; env vars UPSTASH_*, WEBHOOK_* + `NODE_VERSION=22`; flag `nodejs_compat` (so `process.env` reaches the handlers) |
+| Vercel `kilomail` | site + API at kilomail.vercel.app | git build, `api/` as edge functions |
+
+The frontend calls `/api/...` relative, so it works on either host with no code change.
+Local API testing on the real runtime: `npm run build && npx wrangler pages dev dist --compatibility-flag=nodejs_compat`
+(reads `.dev.vars`, which is gitignored).
 
 ### Removing a provider — delete both files, redeploy.
 

@@ -9,3 +9,5 @@ dist/
 check_inbox.js
 zip.bat
 SKILL.md
+.dev.vars
+
