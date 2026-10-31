@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, RefreshCw, X } from 'lucide-react'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, RefreshCw, BookOpen, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
@@ -407,16 +407,16 @@ export default function App() {
                 {canEditName ? (
                   <button
                     onClick={() => { setEditValue(email.split('@')[0]); setEditDomain(currentDomain); setEditing(true) }}
-                    className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98]"
+                    className="flex w-[15rem] min-w-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 transition-colors hover:bg-muted active:scale-[0.98] sm:w-[19rem]"
                   >
-                    <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
-                    <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
-                    <PencilLine className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-left font-mono text-sm">{email.split('@')[0]}</span>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">@{currentDomain}</span>
+                    <PencilLine className="h-3 w-3 shrink-0 text-muted-foreground" />
                   </button>
                 ) : (
-                  <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
-                    <span className="max-w-[160px] truncate font-mono text-sm">{email.split('@')[0]}</span>
-                    <span className="font-mono text-xs text-muted-foreground">@{currentDomain}</span>
+                  <div className="flex w-[15rem] min-w-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-1.5 sm:w-[19rem]">
+                    <span className="min-w-0 flex-1 truncate text-left font-mono text-sm">{email.split('@')[0]}</span>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">@{currentDomain}</span>
                   </div>
                 )}
                 <Tooltip>
@@ -538,6 +538,17 @@ export default function App() {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">New inbox (pick domain)</TooltipContent>
+              </Tooltip>
+            </DockIcon>
+
+            <DockIcon onClick={() => navigate('/docs')}>
+              <Tooltip>
+                <TooltipTrigger aria-label="API docs">
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full')}>
+                    <BookOpen className="size-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">API docs</TooltipContent>
               </Tooltip>
             </DockIcon>
 
