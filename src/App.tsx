@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, RefreshCw, BookOpen, X } from 'lucide-react'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
@@ -399,7 +399,7 @@ export default function App() {
                 <Tooltip>
                   <TooltipTrigger aria-label="New address on this domain" aria-disabled={spinning}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" disabled={spinning} onClick={spinEmail}>
-                      <RefreshCw className={cn('h-4 w-4', spinning && 'animate-spin')} />
+                      <Shuffle className={cn('h-4 w-4', spinning && 'animate-spin')} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>New address · @{currentDomain}</TooltipContent>
