@@ -135,7 +135,12 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
         {message.html && view === 'html'
           ? <iframe
               ref={iframeRef}
-              sandbox="allow-same-origin allow-popups"
+              // allow-popups lets email links open a tab; allow-popups-to-escape-sandbox stops the
+              // opened tab from inheriting this sandbox, which left it script-less and cookie-less
+              // (blank / broken page) - copy-pasting the same URL into a fresh tab worked because
+              // that tab has no sandbox at all.
+              sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              referrerPolicy="no-referrer"
               className="h-full w-full border-0"
               title="Email body"
             />

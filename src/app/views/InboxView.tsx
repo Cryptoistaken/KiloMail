@@ -83,8 +83,8 @@ export function InboxView({
             {connected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             <span>{connected ? 'live' : 'reconnecting…'}</span>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh}>
-            <RefreshCw className="h-3.5 w-3.5" />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={loading} aria-label="Refresh inbox">
+            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
           </Button>
         </div>
       </div>
