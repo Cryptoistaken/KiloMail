@@ -8,7 +8,9 @@ import { ALL_PROVIDERS } from '@/providers/registry'
 import type { ProviderPlugin } from '@/providers/types'
 import { navigate } from '@/hooks/useHashRoute'
 
-const BASE = 'https://kilomail.vercel.app'
+// Same-origin, so the examples match whichever address the site is opened on
+// (kilomail.tech, kilomail.vercel.app, or a preview URL).
+const BASE = window.location.origin
 
 // "Own" = domains we host (Cloudflare worker -> Redis). The rest are third-party inboxes
 // reached through /api/providers/:provider proxies.

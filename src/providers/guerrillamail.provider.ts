@@ -2,7 +2,6 @@ import type { ProviderPlugin } from "./types"
 import type { MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
 
-const BASE     = "https://kilomail.vercel.app"
 const UPSTREAM = "https://api.guerrillamail.com/ajax.php"
 const POLL_MS  = 5_000
 
@@ -77,7 +76,7 @@ async function proxy(email: string, action: string, extra = "", method = "GET"):
 
   const { site } = split(email)
   const call = (sid: string) =>
-    `${BASE}/api/providers/guerrillamail?action=${action}` +
+    `/api/providers/guerrillamail?action=${action}` +
     `&site=${encodeURIComponent(site)}` +
     `&sid_token=${encodeURIComponent(sid)}${extra}`
 

@@ -36,7 +36,7 @@ src/
   providers/
     types.ts                     ProviderPlugin interface — do not change without updating all providers
     registry.ts                  auto-discovery via import.meta.glob — NEVER EDIT
-    kilolabs.provider.ts         OWN domains (factoryai.tech, kilomail.my.id, kilosms.web.id) | SSE | delete supported
+    kilolabs.provider.ts         OWN domains (factoryai.tech, kilomail.my.id, kilosms.web.id, kilomail.tech) | SSE | delete supported
     guerrillamail.provider.ts    guerrillamail.com | sharklasers.com | grr.la | spam4.me — sid_token kept in localStorage
     maildrop.provider.ts         maildrop.cc — GraphQL upstream
     tempmailplus.provider.ts     mailto.plus | fexbox.org | fexpost.com | fextemp.com | merepost.com
@@ -98,8 +98,8 @@ interface MessageFull extends MessageMeta {
 type Panel = "inbox" | "history"
 
 // Constants
-const BASE   = "https://kilomail.vercel.app"
-const DOMAIN = "factoryai.tech"     // primary own domain
+const BASE   = ""                     // same-origin: all API calls are /api/... — no host baked in
+const DOMAIN = "factoryai.tech"       // first own domain (the list lives in kilolabs.provider.ts)
 ```
 
 ---

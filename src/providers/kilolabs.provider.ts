@@ -2,24 +2,23 @@ import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
 
-const BASE = "https://kilomail.vercel.app"
 
 export default {
   id:      "kilolabs",
   name:    "KiloLabs",
-  domains: ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"],
+  domains: ["factoryai.tech", "kilomail.my.id", "kilosms.web.id", "kilomail.tech"],
   enabled: true,
 
   generateUsername() { return generateUsername() },
 
   async fetchInbox(email) {
-    const res = await fetch(`${BASE}/api/inbox/${encodeURIComponent(email)}`)
+    const res = await fetch(`/api/inbox/${encodeURIComponent(email)}`)
     const data = await res.json()
     return Array.isArray(data) ? data : []
   },
 
   streamInbox(email, onUpdate, onStatusChange) {
-    const es = new EventSource(`${BASE}/api/inbox/${encodeURIComponent(email)}/stream`)
+    const es = new EventSource(`/api/inbox/${encodeURIComponent(email)}/stream`)
     es.onmessage = (e) => {
       const d = JSON.parse(e.data)
       if (d.type === "connected") onStatusChange(true)
@@ -31,7 +30,7 @@ export default {
 
   async fetchMessage(email, meta) {
     const res = await fetch(
-      `${BASE}/api/inbox/${encodeURIComponent(email)}/${encodeURIComponent(meta.id)}`
+      `/api/inbox/${encodeURIComponent(email)}/${encodeURIComponent(meta.id)}`
     )
     if (!res.ok) return null
     return res.json() as Promise<MessageFull>
@@ -39,7 +38,7 @@ export default {
 
   async deleteMessage(email, id) {
     await fetch(
-      `${BASE}/api/inbox/${encodeURIComponent(email)}/${encodeURIComponent(id)}`,
+      `/api/inbox/${encodeURIComponent(email)}/${encodeURIComponent(id)}`,
       { method: "DELETE" },
     )
   },

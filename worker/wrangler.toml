@@ -3,7 +3,7 @@ main = "index.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
-DOMAINS = "factoryai.tech,kilomail.my.id,kilosms.web.id"
+DOMAINS = "factoryai.tech,kilomail.my.id,kilosms.web.id,kilomail.tech"
 
 # Set secrets via:
 #   wrangler secret put UPSTASH_REDIS_REST_URL

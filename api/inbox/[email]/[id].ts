@@ -5,7 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id"];
+const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id", "kilomail.tech"];
 const CORS = {
   "Content-Type": "application/json",
   "Cache-Control": "no-store",

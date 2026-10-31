@@ -2,7 +2,6 @@ import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
 
-const BASE    = "https://kilomail.vercel.app"
 const POLL_MS = 5_000
 
 const DOMAINS = [
@@ -30,7 +29,7 @@ export default {
     const d    = domain || DOMAINS[0]
     const name = generateUsername()
     const res  = await fetch(
-      `${BASE}/api/providers/tempmailio?action=create&domain=${encodeURIComponent(d)}&name=${encodeURIComponent(name)}`,
+      `/api/providers/tempmailio?action=create&domain=${encodeURIComponent(d)}&name=${encodeURIComponent(name)}`,
       { method: "POST" },
     )
     if (!res.ok) throw new Error(`temp-mail.io: create failed (${res.status})`)
@@ -41,7 +40,7 @@ export default {
 
   async fetchInbox(email) {
     const res = await fetch(
-      `${BASE}/api/providers/tempmailio?action=inbox&email=${encodeURIComponent(email)}`,
+      `/api/providers/tempmailio?action=inbox&email=${encodeURIComponent(email)}`,
     )
     if (!res.ok) return []
     const data = await res.json()
@@ -55,7 +54,7 @@ export default {
       if (!active) return
       try {
         const res = await fetch(
-          `${BASE}/api/providers/tempmailio?action=inbox&email=${encodeURIComponent(email)}`,
+          `/api/providers/tempmailio?action=inbox&email=${encodeURIComponent(email)}`,
         )
         if (!res.ok) throw new Error(`inbox ${res.status}`)
         const data = await res.json()
@@ -70,7 +69,7 @@ export default {
 
   async fetchMessage(email, meta) {
     const res = await fetch(
-      `${BASE}/api/providers/tempmailio?action=read&email=${encodeURIComponent(email)}&id=${encodeURIComponent(meta.id)}`,
+      `/api/providers/tempmailio?action=read&email=${encodeURIComponent(email)}&id=${encodeURIComponent(meta.id)}`,
     )
     if (!res.ok) return null
     return res.json() as Promise<MessageFull>

@@ -1,7 +1,6 @@
 import type { ProviderPlugin } from "./types"
 import type { MessageMeta, MessageFull } from "@/lib/types"
 
-const BASE     = "https://kilomail.vercel.app"
 const POLL_MS  = 5_000
 const DOMAIN   = "maxxspace.com"   // the only active mail.tm domain (GET /domains)
 const KEY      = "mailtm:"         // localStorage: KEY + address -> { address, token }
@@ -44,7 +43,7 @@ export default {
   async createEmail(domain) {
     const address  = `km${randomHex(6)}@${domain || DOMAIN}`
     const password = randomHex(16)
-    const res = await fetch(`${BASE}/api/providers/mailtm?action=create`, {
+    const res = await fetch(`/api/providers/mailtm?action=create`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ address, password }),
@@ -61,7 +60,7 @@ export default {
   async fetchInbox(email) {
     const s = loadSession(email)
     if (!s) return []
-    const res = await fetch(`${BASE}/api/providers/mailtm?action=inbox`, {
+    const res = await fetch(`/api/providers/mailtm?action=inbox`, {
       headers: { Authorization: `Bearer ${s.token}` },
     })
     if (!res.ok) return []
@@ -77,7 +76,7 @@ export default {
     const poll = async () => {
       if (!active) return
       try {
-        const res = await fetch(`${BASE}/api/providers/mailtm?action=inbox`, {
+        const res = await fetch(`/api/providers/mailtm?action=inbox`, {
           headers: { Authorization: `Bearer ${s.token}` },
         })
         if (!res.ok) throw new Error(`inbox ${res.status}`)
@@ -95,7 +94,7 @@ export default {
     const s = loadSession(email)
     if (!s) return null
     const res = await fetch(
-      `${BASE}/api/providers/mailtm?action=read&id=${encodeURIComponent(meta.id)}`,
+      `/api/providers/mailtm?action=read&id=${encodeURIComponent(meta.id)}`,
       { headers: { Authorization: `Bearer ${s.token}` } },
     )
     if (!res.ok) return null
@@ -106,7 +105,7 @@ export default {
     const s = loadSession(email)
     if (!s) return
     await fetch(
-      `${BASE}/api/providers/mailtm?action=delete&id=${encodeURIComponent(id)}`,
+      `/api/providers/mailtm?action=delete&id=${encodeURIComponent(id)}`,
       { method: "DELETE", headers: { Authorization: `Bearer ${s.token}` } },
     )
   },

@@ -9,7 +9,7 @@ Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · 
 ## Architecture
 
 ```
-Email sent to anything@factoryai.tech (or @kilomail.my.id, @kilosms.web.id)
+Email sent to anything@factoryai.tech (or @kilomail.my.id, @kilosms.web.id, @kilomail.tech)
          ↓
 Cloudflare Email Routing (catch-all → Email Worker)
          ↓
@@ -24,6 +24,10 @@ Frontend SSE stream
 
 ## Setup
 
+Public URL: **https://kilomail.tech** (`https://kilomail.vercel.app` keeps working as the Vercel
+production alias). Every API call in the frontend is same-origin (`/api/...`), so the app works on
+any host it is opened on — nothing to change in code when a domain is added.
+
 ### 1. Upstash Redis
 
 1. Create a free database at https://console.upstash.com
@@ -33,7 +37,7 @@ Frontend SSE stream
 ### 2. Cloudflare Email Routing
 
 1. In Cloudflare dashboard → **Email** → **Email Routing**
-2. Enable Email Routing for each own domain (`factoryai.tech`, `kilomail.my.id`, `kilosms.web.id`)
+2. Enable Email Routing for each own domain (`factoryai.tech`, `kilomail.my.id`, `kilosms.web.id`, `kilomail.tech`)
 3. On every zone, set a **catch-all** rule → action: **Send to Worker** → select `kilomail-email-worker`
 
 ### 3. Deploy the Email Worker

@@ -2,8 +2,8 @@
 
 > Disposable email service with real-time SSE inboxes. Free public API — no API key, no sign-up, no rate limits, 30-day message retention.
 
-Base URL: https://kilomail.vercel.app
-Own domains: factoryai.tech, kilomail.my.id, kilosms.web.id
+Base URL: https://kilomail.tech (also served on https://kilomail.vercel.app)
+Own domains: factoryai.tech, kilomail.my.id, kilosms.web.id, kilomail.tech
 
 Important notes:
 
@@ -17,7 +17,7 @@ Important notes:
 
 ## API
 
-- [Public API reference](https://kilomail.vercel.app/#/docs): Every endpoint, params, responses and curl examples
+- [Public API reference](https://kilomail.tech/#/docs): Every endpoint, params, responses and curl examples
 - GET /api/inbox/{email}: list messages in an inbox (MessageMeta[])
 - GET /api/inbox/{email}/stream: Server-Sent Events live inbox stream
 - GET /api/inbox/{email}/{id}: full message body (MessageFull)

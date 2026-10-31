@@ -2,7 +2,6 @@ import type { ProviderPlugin } from "./types"
 import type { MessageFull } from "@/lib/types"
 import { generateUsername } from "@/lib/names"
 
-const BASE    = "https://kilomail.vercel.app"
 const POLL_MS = 5_000
 
 export default {
@@ -17,7 +16,7 @@ export default {
 
   async fetchInbox(email) {
     const res = await fetch(
-      `${BASE}/api/providers/maildrop?action=inbox&email=${encodeURIComponent(email)}`
+      `/api/providers/maildrop?action=inbox&email=${encodeURIComponent(email)}`
     )
     if (!res.ok) return []
     const data = await res.json()
@@ -31,7 +30,7 @@ export default {
       if (!active) return
       try {
         const res = await fetch(
-          `${BASE}/api/providers/maildrop?action=inbox&email=${encodeURIComponent(email)}`
+          `/api/providers/maildrop?action=inbox&email=${encodeURIComponent(email)}`
         )
         if (!res.ok) throw new Error("fetch failed")
         const data = await res.json()
@@ -48,7 +47,7 @@ export default {
 
   async fetchMessage(email, meta) {
     const res = await fetch(
-      `${BASE}/api/providers/maildrop?action=read&email=${encodeURIComponent(email)}&id=${encodeURIComponent(meta.id)}`
+      `/api/providers/maildrop?action=read&email=${encodeURIComponent(email)}&id=${encodeURIComponent(meta.id)}`
     )
     if (!res.ok) return null
     return res.json() as Promise<MessageFull>
@@ -56,7 +55,7 @@ export default {
 
   async deleteMessage(email, id) {
     await fetch(
-      `${BASE}/api/providers/maildrop?action=delete&email=${encodeURIComponent(email)}&id=${encodeURIComponent(id)}`,
+      `/api/providers/maildrop?action=delete&email=${encodeURIComponent(email)}&id=${encodeURIComponent(id)}`,
       { method: "DELETE" },
     )
   },
