@@ -31,13 +31,14 @@ interface InboxViewProps {
   onSelect: (id: string) => void
   onDelete: (id: string) => Promise<void>
   onRefresh: () => void
+  refreshing: boolean
   bodyCodes: Record<string, string>
   canDelete: boolean
 }
 
 export function InboxView({
   email, messages, loading, connected,
-  selected, onSelect, onDelete, onRefresh, bodyCodes, canDelete,
+  selected, onSelect, onDelete, onRefresh, refreshing, bodyCodes, canDelete,
 }: InboxViewProps) {
   const [deleteState, setDeleteState] = useState<Record<string, 'deleting' | 'deleted'>>({})
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -83,8 +84,8 @@ export function InboxView({
             {connected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             <span>{connected ? 'live' : 'reconnecting…'}</span>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={loading} aria-label="Refresh inbox">
-            <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={loading || refreshing} aria-label="Refresh inbox">
+            <RefreshCw className={cn('h-3.5 w-3.5', (loading || refreshing) && 'animate-spin')} />
           </Button>
         </div>
       </div>

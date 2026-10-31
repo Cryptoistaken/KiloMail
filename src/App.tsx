@@ -160,6 +160,7 @@ export default function App() {
   const [bodyCodes,    setBodyCodes]    = useState<Record<string, string>>({})
   const [menuTab,      setMenuTab]      = useState<'own' | 'third'>('own')
   const [spinning,     setSpinning]     = useState(false)
+  const [refreshing,   setRefreshing]   = useState(false)
 
   const msgCache   = useRef<Map<string, MessageFull>>(new Map())
   const readIds    = useRef<Set<string>>(new Set())
@@ -324,6 +325,18 @@ export default function App() {
     setTimeout(() => setSpinning(false), 500)
     newInbox(currentDomain)
   }
+
+  // A fetch here takes ~50ms, which is too fast to see, so the spin is held for 600ms.
+  const refreshInbox = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    const started = Date.now()
+    try { await loadInbox(email) } finally {
+      const left = 600 - (Date.now() - started)
+      if (left > 0) await new Promise(r => setTimeout(r, left))
+      setRefreshing(false)
+    }
+  }
   const currentDomain = DOMAINS.find(d => email.endsWith(`@${d}`)) ?? email.split("@")[1] ?? DEFAULT_DOMAIN
   const currentProvider = ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))
   const canEditName = currentProvider?.customUsername !== false
@@ -440,7 +453,7 @@ export default function App() {
             <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}>
               <InboxView email={email} messages={messages} loading={loading} connected={connected}
                 selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
-                onRefresh={() => loadInbox(email)} bodyCodes={bodyCodes}
+                onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes}
                 canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
               />
             </Suspense>
