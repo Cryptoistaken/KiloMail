@@ -45,7 +45,7 @@ export function Landing({ onLaunch }: LandingProps) {
           <header className="flex items-center justify-between px-6 pt-5">
             <div className="flex items-center gap-2">
               <Logo variant="icon" className="h-7 w-7 sm:hidden" />
-              <Logo variant="logo" className="hidden h-5 sm:block" />
+              <Logo variant="logo" className="hidden sm:inline-flex" />
             </div>
             <nav className="flex items-center gap-3" aria-label="Site">
               <button onClick={() => navigate('/docs')}

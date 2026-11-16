@@ -110,3 +110,21 @@ Create two files — see CLAUDE.md for the full walkthrough:
 
 The own domains live in `kilolabs.provider.ts` and read Upstash Redis directly. Everything else is a
 third-party inbox behind an `api/providers/<id>.ts` proxy. Public API reference: `#/docs` on the live site.
+
+---
+
+## Browser extension
+
+`extension/` is a Manifest V3 side panel — a small KiloMail client, not an iframe wrapper. It calls the
+public API on `https://kilomail.tech` directly, so it needs no build step and no key.
+
+- Live inbox over SSE, OTP codes lifted out of the subject (and the body, when there is no code in the subject)
+- Delete, copy address, edit the local part, one-click new address on the current domain
+- Light/dark, following the system theme on first run
+- Own domains only. Inbox lives in `localStorage`, so it is separate from the website's.
+
+Load it: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick the `extension/` folder.
+Clicking the toolbar icon opens the panel.
+
+The panel palette mirrors `src/index.css` (same shadcn neutral tokens), and the logo is the same inline
+Bazel mark the site uses, drawn with `currentColor` so it follows the theme.
