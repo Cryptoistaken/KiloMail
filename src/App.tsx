@@ -512,7 +512,7 @@ export default function App() {
             'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
             !selectedId && panel === 'inbox' && 'hidden md:flex'
           )}>
-            {panel === 'inbox'   && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><MessageView message={fullMsg} loading={msgLoading} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} /></Suspense>}
+            {panel === 'inbox'   && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><MessageView message={fullMsg} loading={msgLoading} inboxEmail={email} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} /></Suspense>}
             {panel === 'history' && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><HistoryView onSwitch={switchToEmail} onClear={() => {}} /></Suspense>}
           </section>
         </main>

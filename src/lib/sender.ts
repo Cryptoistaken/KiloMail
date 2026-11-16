@@ -60,3 +60,15 @@ export function senderFull(msg: Who): string {
   const name = (msg.fromName || embeddedName(msg.from) || '').trim()
   return name && from ? `${name} <${from}>` : senderLabel(msg)
 }
+
+/** Just the display name, or null when the sender set none (the label is shown alone then). */
+export function senderDisplayName(msg: Who): string | null {
+  return ((msg.fromName || embeddedName(msg.from) || '').trim()) || null
+}
+
+/** The bare address out of `Name <addr>`, or the string itself if it already is one. */
+export function addressOnly(display: string): string {
+  const s = (display || '').trim()
+  const m = s.match(/<([^>]+)>/)
+  return (m ? m[1] : s).trim()
+}

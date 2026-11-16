@@ -11,6 +11,55 @@ const DEFAULT_DOMAINS = "factoryai.tech";
 const TTL = 2592000; // 30 days
 const MAX_MESSAGES = 50;
 
+interface MailHeader { key: string; value: string }
+interface MailAddress { name?: string; address?: string }
+
+/** `Name <addr>` the way a mail client writes it. */
+function formatAddress(a?: MailAddress | null): string {
+  const address = (a?.address ?? "").trim();
+  const name = (a?.name ?? "").trim();
+  if (!address) return "";
+  return name ? `${name} <${address}>` : address;
+}
+
+function header(headers: MailHeader[], name: string): string {
+  const want = name.toLowerCase();
+  const hit = headers.find((h) => h.key.toLowerCase() === want);
+  return hit ? hit.value.trim() : "";
+}
+
+function headerAll(headers: MailHeader[], name: string): string[] {
+  const want = name.toLowerCase();
+  return headers.filter((h) => h.key.toLowerCase() === want).map((h) => h.value);
+}
+
+/** The domain of the ENVELOPE sender - what a mail client calls "mailed-by". */
+function envelopeDomain(address: string): string {
+  const m = (address ?? "").match(/@([^>\s]+)/);
+  return m ? m[1].toLowerCase() : "";
+}
+
+/** The DKIM signing domain ("signed-by"), preferring a signature that actually passed. */
+function dkimDomain(headers: MailHeader[]): string {
+  const auth = headerAll(headers, "authentication-results").join(" ");
+  const passed = auth.match(/dkim=pass[^;]*?\bheader\.d=([A-Za-z0-9.-]+)/i);
+  if (passed) return passed[1].toLowerCase();
+  const sigs = headerAll(headers, "dkim-signature");
+  for (let i = sigs.length - 1; i >= 0; i--) {
+    const d = sigs[i].match(/(?:^|[;\s])d=([A-Za-z0-9.-]+)/i);
+    if (d) return d[1].toLowerCase();
+  }
+  return "";
+}
+
+/** Whether the message travelled over TLS, read off the Received chain. */
+function encryption(headers: MailHeader[]): string {
+  const received = headerAll(headers, "received").join(" ");
+  if (/esmtps|with tls|\bTLSv?1|\(TLS\)/i.test(received)) return "Standard encryption (TLS)";
+  if (/\besmtp\b/i.test(received)) return "No encryption";
+  return "";
+}
+
 export default {
   async email(message: ForwardableEmailMessage, env: Env): Promise<void> {
     const raw = await new Response(message.raw).arrayBuffer();
@@ -30,12 +79,22 @@ export default {
     const fromAddress = headerFrom?.address?.trim() || message.from || "";
     const fromName = (headerFrom?.name ?? "").trim();
 
+    const hdrs: MailHeader[] = (parsed.headers ?? []).map((h) => ({ key: String(h.key ?? ""), value: String(h.value ?? "") }));
+
     const id = crypto.randomUUID();
     const now = Date.now();
     const meta = JSON.stringify({
       id,
       from: fromAddress,
       fromName,
+      // Extra header details for the message "details" popover. Whatever a mail does not carry
+      // simply stays empty and its row is left out.
+      to: formatAddress(parsed.to?.[0]) || header(hdrs, "to") || message.to || "",
+      replyTo: formatAddress(parsed.replyTo?.[0]) || header(hdrs, "reply-to"),
+      date: header(hdrs, "date"),
+      mailedBy: envelopeDomain(message.from ?? ""),
+      signedBy: dkimDomain(hdrs),
+      encryption: encryption(hdrs),
       subject: parsed.subject ?? "(no subject)",
       receivedAt: new Date(now).toISOString(),
       expiresAt: now + TTL * 1000,

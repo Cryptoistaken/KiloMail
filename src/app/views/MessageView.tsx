@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { Trash2, X, Mail, ChevronLeft, AlignLeft, Code2 } from 'lucide-react'
+import { Trash2, X, Mail, ChevronLeft, ChevronDown, AlignLeft, Code2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
-import { senderFull } from '@/lib/sender'
+import { cn } from '@/lib/utils'
+import { addressOnly, senderAddress, senderDisplayName, senderLabel, senderFull } from '@/lib/sender'
 import type { MessageFull } from '@/lib/types'
 
 interface MessageViewProps {
   message: MessageFull | null
   loading: boolean
+  /** The inbox being read, so the To line can say "me" like a mail client does. */
+  inboxEmail: string
   onClose: () => void
   onDelete: () => void
 }
@@ -26,11 +29,38 @@ function addTargetBlank(html: string): string {
   return html.replace(/<a\s(?![^>]*target=)/gi, '<a target="_blank" rel="noopener noreferrer" ')
 }
 
-export function MessageView({ message, loading, onClose, onDelete }: MessageViewProps) {
+/** "3 minutes ago" - the relative half of "9:30 PM (3 minutes ago)". */
+function agoLabel(when: number): string {
+  const mins = Math.round((Date.now() - when) / 60_000)
+  if (!Number.isFinite(mins)) return ''
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+  const days = Math.round(hours / 24)
+  return `${days} day${days === 1 ? '' : 's'} ago`
+}
+
+/** The sender's own Date header when there is a usable one, otherwise when it arrived. */
+function sentAt(message: MessageFull): number {
+  const header = message.date ? Date.parse(message.date) : NaN
+  return Number.isFinite(header) ? header : new Date(message.receivedAt).getTime()
+}
+
+function clockTime(ms: number): string {
+  const d = new Date(ms)
+  const sameDay = d.toDateString() === new Date().toDateString()
+  return d.toLocaleString(undefined, sameDay
+    ? { hour: '2-digit', minute: '2-digit' }
+    : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+export function MessageView({ message, loading, inboxEmail, onClose, onDelete }: MessageViewProps) {
   const [view, setView] = useState<'html' | 'text'>('html')
+  const [showDetails, setShowDetails] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => { setView('html') }, [message?.id])
+  useEffect(() => { setView('html'); setShowDetails(false) }, [message?.id])
 
   useEffect(() => {
     if (message?.html && iframeRef.current && view === 'html') {
@@ -75,37 +105,97 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
     </div>
   )
 
+  const name = senderDisplayName(message)
+  const fromAddress = senderAddress(message.from)
+  const sent = sentAt(message)
+
+  // "to me" when the mail was addressed to the inbox being read, like a mail client shows it.
+  const toAddress = message.to ? addressOnly(message.to) : ''
+  const recipient = !toAddress
+    ? inboxEmail
+    : toAddress.toLowerCase() === inboxEmail.toLowerCase() ? 'me' : toAddress
+
+  const dateValue = message.date && Number.isNaN(Date.parse(message.date))
+    ? message.date
+    : new Date(sent).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
+  // Only worth showing Reply-To when it is not simply From again.
+  const replyToRow = message.replyTo && addressOnly(message.replyTo).toLowerCase() !== fromAddress.toLowerCase()
+    ? [['Reply-To', message.replyTo] as const]
+    : []
+
+  const details: ReadonlyArray<readonly [string, string]> = [
+    ['From', senderFull(message)],
+    ...replyToRow,
+    ['To', message.to || inboxEmail],
+    ['Date', dateValue],
+    ['Subject', message.subject || '(no subject)'],
+    ...(message.mailedBy ? [['Mailed-by', message.mailedBy] as const] : []),
+    ...(message.signedBy ? [['Signed-by', message.signedBy] as const] : []),
+    ...(message.encryption ? [['Security', message.encryption] as const] : []),
+  ]
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-1.5">
             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 md:hidden" onClick={onClose}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <SenderAvatar from={message.from} fromName={message.fromName} className="h-8 w-8 text-[11px]" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{message.subject || '(no subject)'}</p>
-              <p className="truncate text-xs text-muted-foreground" title={message.from}>
-                {senderFull(message)}
-              </p>
-            </div>
+            <p className="truncate text-base font-medium">{message.subject || '(no subject)'}</p>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
-            <span className="mr-2 hidden text-[11px] text-muted-foreground sm:block">
-              {new Date(message.receivedAt).toLocaleString(undefined, {
-                month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit',
-              })}
-            </span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={onDelete}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={onDelete} aria-label="Delete message">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 hidden md:flex" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 hidden md:flex" onClick={onClose} aria-label="Close">
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
+
+        <div className="mt-3 flex items-start gap-3">
+          <SenderAvatar from={message.from} fromName={message.fromName} className="h-9 w-9 text-[11px]" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="min-w-0 truncate text-sm" title={fromAddress}>
+                {name
+                  ? <>
+                      <span className="font-semibold">{name}</span>{' '}
+                      <span className="text-muted-foreground">&lt;{fromAddress}&gt;</span>
+                    </>
+                  : <span className="font-semibold">{senderLabel(message)}</span>}
+              </p>
+              <p className="shrink-0 text-[11px] text-muted-foreground">
+                {clockTime(sent)}
+                <span className="hidden sm:inline"> ({agoLabel(sent)})</span>
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowDetails(v => !v)}
+              aria-expanded={showDetails}
+              title={showDetails ? 'Hide details' : 'Show details'}
+              className="-ml-1 mt-0.5 flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              to {recipient}
+              <ChevronDown className={cn('h-3 w-3 transition-transform', showDetails && 'rotate-180')} />
+            </button>
+
+            {showDetails && (
+              <div className="mt-2 grid grid-cols-[74px_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-muted/30 p-2.5">
+                {details.map(([k, v]) => (
+                  <div key={k} className="contents">
+                    <span className="text-right text-[11px] text-muted-foreground">{k}</span>
+                    <span className="break-words font-mono text-[11px] leading-relaxed">{v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {message.html && message.text && (
           <div className="mt-2.5 flex items-center gap-1">
             <button

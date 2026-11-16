@@ -14,6 +14,13 @@ interface IncomingPayload {
   from: string;
   /** Optional display name, e.g. "KERNEL". Older senders omit it. */
   fromName?: string;
+  /** Optional header details for the "details" popover. All optional. */
+  messageTo?: string;
+  replyTo?: string;
+  date?: string;
+  mailedBy?: string;
+  signedBy?: string;
+  encryption?: string;
   subject: string;
   text: string;
   html: string;
@@ -22,7 +29,13 @@ interface IncomingPayload {
 interface MessageMeta {
   id: string;
   from: string;
-  fromName: string;
+  fromName?: string;
+  to?: string;
+  replyTo?: string;
+  date?: string;
+  mailedBy?: string;
+  signedBy?: string;
+  encryption?: string;
   subject: string;
   receivedAt: string;
   expiresAt: number;
@@ -50,6 +63,12 @@ export default async function handler(req: Request): Promise<Response> {
     id,
     from: body.from ?? "",
     fromName: body.fromName ?? "",
+    to: body.messageTo ?? "",
+    replyTo: body.replyTo ?? "",
+    date: body.date ?? "",
+    mailedBy: body.mailedBy ?? "",
+    signedBy: body.signedBy ?? "",
+    encryption: body.encryption ?? "",
     subject: body.subject ?? "(no subject)",
     receivedAt: now.toISOString(),
     expiresAt: now.getTime() + TTL * 1000,

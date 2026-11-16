@@ -18,6 +18,12 @@ interface MessageMeta {
   id: string;
   from: string;
   fromName?: string;
+  to?: string;
+  replyTo?: string;
+  date?: string;
+  mailedBy?: string;
+  signedBy?: string;
+  encryption?: string;
   subject: string;
   receivedAt: string;
   read: boolean;
@@ -58,6 +64,13 @@ export default async function handler(req: Request): Promise<Response> {
       id:         meta.id,
       from:       meta.from,
       fromName:   meta.fromName ?? "",
+      // Header details for the "details" popover; empty for mail stored before they were kept.
+      to:         meta.to ?? "",
+      replyTo:    meta.replyTo ?? "",
+      date:       meta.date ?? "",
+      mailedBy:   meta.mailedBy ?? "",
+      signedBy:   meta.signedBy ?? "",
+      encryption: meta.encryption ?? "",
       subject:    meta.subject,
       receivedAt: meta.receivedAt,
       read:       true,

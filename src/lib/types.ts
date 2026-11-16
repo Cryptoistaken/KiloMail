@@ -14,6 +14,14 @@ export interface MessageFull extends MessageMeta {
   read: boolean
   text: string
   html: string
+  /** Header details for the "details" popover. All of these are empty on mail stored before
+   *  the worker started keeping them (i.e. anything already sitting in an inbox). */
+  to?: string
+  replyTo?: string
+  date?: string
+  mailedBy?: string
+  signedBy?: string
+  encryption?: string
 }
 
 export type Panel = "inbox" | "history"
