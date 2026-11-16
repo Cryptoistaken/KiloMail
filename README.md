@@ -6,6 +6,25 @@ Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · 
 
 ---
 
+## Features
+
+- **Live inbox** over SSE (own domains only: 30-day retention, real-time, delete).
+- **One-time codes** are lifted from the subject and the whole body and offered as a copy chip. Detection
+  covers digits (`482913`), letters+digits (`A1B2C3`) and CAPITAL letters only (`KQZX`). Each shape is
+  anchored to a code-ish word, so a ZIP code in a mailing address or a CSS hex colour is never offered.
+  Logic lives in `src/lib/codes.ts`; bodies are fetched in the background to find codes that only appear there.
+- **Sender identity.** The worker stores the header `From` address plus its display name as `fromName`,
+  not Cloudflare's envelope sender (which for bulk mail is a machine token such as
+  `010001a1dc...-000000@envelope.sup.kernel.sh`). The list shows the display name when there is one and falls
+  back to the sender's domain; the raw address is in the tooltip.
+- **Sender picture** — the sender's Gravatar photo, else their site logo, else the letter avatar
+  (`src/app/components/SenderAvatar.tsx`).
+- **New-mail chime** with a mute button in the dock (`src/lib/sound.ts`). Synthesised, so no audio file ships.
+  Browsers only allow audio after the page has been clicked once.
+- **History** re-checks every saved inbox in one click and searches both the addresses and the mail inside them.
+
+---
+
 ## Architecture
 
 ```

@@ -3,24 +3,10 @@ import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Che
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageSkeleton } from '@/app/components/MessageSkeleton'
+import { SenderAvatar } from '@/app/components/SenderAvatar'
+import { senderLabel, senderSecondary } from '@/lib/sender'
+import { subjectCode } from '@/lib/codes'
 import type { MessageMeta } from '@/lib/types'
-
-const AVATAR_COLORS = [
-  'bg-violet-500/15 text-violet-600 dark:text-violet-400',
-  'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-  'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-  'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-  'bg-rose-500/15 text-rose-600 dark:text-rose-400',
-  'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
-  'bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400',
-  'bg-orange-500/15 text-orange-600 dark:text-orange-400',
-]
-
-function avatarColor(seed: string) {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
-}
 
 interface InboxViewProps {
   email: string
@@ -44,9 +30,7 @@ export function InboxView({
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   function getCode(msg: MessageMeta): string | null {
-    const subjectMatch = msg.subject?.match(/\b(\d{4,8})\b/)
-    if (subjectMatch) return subjectMatch[1]
-    return bodyCodes[msg.id] ?? null
+    return subjectCode(msg.subject) ?? bodyCodes[msg.id] ?? null
   }
 
   const handleCopy = async (e: React.MouseEvent, msg: MessageMeta) => {
@@ -126,20 +110,18 @@ export function InboxView({
                     !msg.read && !ds && 'bg-primary/5'
                   )}
                 >
-                  <div className={cn(
-                    'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                    avatarColor(msg.from)
-                  )}>
-                    {msg.from[0]?.toUpperCase() ?? '?'}
-                  </div>
+                  <SenderAvatar from={msg.from} fromName={msg.fromName} className="mt-0.5 h-8 w-8 text-xs" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1.5">
                         {!msg.read && (
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                         )}
-                        <span className={cn('truncate text-sm', !msg.read ? 'font-semibold' : 'font-medium')}>
-                          {msg.from}
+                        <span
+                          title={senderSecondary(msg) ?? undefined}
+                          className={cn('truncate text-sm', !msg.read ? 'font-semibold' : 'font-medium')}
+                        >
+                          {senderLabel(msg)}
                         </span>
                       </div>
                       <span className="shrink-0 text-xs text-muted-foreground">{msg.timeAgo}</span>

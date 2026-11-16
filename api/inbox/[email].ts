@@ -15,6 +15,7 @@ const CORS = {
 interface MessageMeta {
   id: string;
   from: string;
+  fromName?: string;
   subject: string;
   receivedAt: string;
   expiresAt?: number;
@@ -54,6 +55,7 @@ export default async function handler(req: Request): Promise<Response> {
     .map((m) => ({
       id:         m.id,
       from:       m.from,
+      fromName:   m.fromName ?? "",
       subject:    m.subject,
       receivedAt: m.receivedAt,
       read:       m.read ?? false,

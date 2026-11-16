@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X } from 'lucide-react'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X, Volume2, VolumeX } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
@@ -34,6 +34,8 @@ import { saveToHistory, updateMessageCount } from '@/lib/history'
 import { useHashRoute, navigate } from '@/hooks/useHashRoute'
 import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
+import { extractCode, subjectCode } from '@/lib/codes'
+import { playChime, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
 
 // "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
 // Every other domain belongs to a third-party inbox that the api/providers proxies talk to.
@@ -60,25 +62,6 @@ function getOrCreateInbox(): string {
   const fresh = randomInbox()
   persistInbox(fresh)
   return fresh
-}
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim()
-}
-
-function extractCode(text: string, html: string): string | null {
-  const src = text.trim() ? text : stripHtml(html)
-  const patterns = [
-    /confirmation\s+code(?:\s+in\s+the\s+app)?[^\d]+(\d{4,8})/i,
-    /(?:code|verification|otp|pin|confirmation|token)[^\d]*(\d{4,8})\b/i,
-    /\b(\d{4,8})\b/,
-  ]
-  for (const p of patterns) {
-    const m = src.match(p)
-    if (m?.[1]) return m[1]
-    if (m?.[0] && p.source === '\\b(\\d{4,8})\\b') return m[0]
-  }
-  return null
 }
 
 function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) => void; onClose: () => void }) {
@@ -161,11 +144,26 @@ export default function App() {
   const [menuTab,      setMenuTab]      = useState<'own' | 'third'>('own')
   const [generating,   setGenerating]   = useState(false)
   const [refreshing,   setRefreshing]   = useState(false)
+  const [sound,        setSound]        = useState(soundOn)
 
   const msgCache   = useRef<Map<string, MessageFull>>(new Map())
   const readIds    = useRef<Set<string>>(new Set())
   const stopStream = useRef<(() => void) | null>(null)
   const newMenuRef = useRef<HTMLDivElement>(null)
+  // New-mail chime bookkeeping: the first stream payload after connecting is the existing
+  // inbox, not new mail, so it only arms the chime.
+  const chimeArmed = useRef(false)
+  const seenIds    = useRef<Set<string>>(new Set())
+  const soundRef   = useRef(sound)
+  useEffect(() => { soundRef.current = sound }, [sound])
+
+  // Browsers keep audio silent until the page has been clicked, so open the audio context
+  // on the first real gesture.
+  useEffect(() => {
+    const unlock = () => unlockAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [])
 
   const autoCopy = useCallback((addr: string) => {
     navigator.clipboard.writeText(addr).then(() => {
@@ -185,7 +183,7 @@ export default function App() {
   }, [])
 
   const prefetchBodyCodes = useCallback(async (addr: string, msgs: MessageMeta[]) => {
-    const targets = msgs.filter(m => !/\b\d{4,8}\b/.test(m.subject ?? '') && !msgCache.current.has(m.id))
+    const targets = msgs.filter(m => !subjectCode(m.subject) && !msgCache.current.has(m.id))
     if (!targets.length) return
     const results: Record<string, string> = {}
     await Promise.all(targets.map(async m => {
@@ -205,6 +203,7 @@ export default function App() {
     setEmail(next); setMessages([]); setSelectedId(null)
     setFullMsg(null); readIds.current.clear()
     msgCache.current.clear(); setBodyCodes({})
+    chimeArmed.current = false; seenIds.current = new Set()
     autoCopy(next)
   }
 
@@ -221,12 +220,19 @@ export default function App() {
     stopStream.current?.()
     stopStream.current = null
     setConnected(false)
+    chimeArmed.current = false
     try {
       const provider = getProvider(addr)
       const stop = provider.streamInbox(
         addr,
         (msgs) => {
           const mapped = msgs.map(m => ({ ...m, read: readIds.current.has(m.id) || m.read }))
+          // Chime only for genuinely new mail - never on the first payload after connecting
+          // (that is the inbox we already have) and never on a manual refresh.
+          const fresh = mapped.some(m => !seenIds.current.has(m.id))
+          seenIds.current = new Set(mapped.map(m => m.id))
+          if (chimeArmed.current && fresh && soundRef.current) playChime()
+          chimeArmed.current = true
           setMessages(mapped)
           updateMessageCount(addr, mapped.length)
           prefetchRef.current(addr, mapped)
@@ -447,6 +453,15 @@ export default function App() {
               </>
             )}
           </div>
+
+          <Tooltip>
+            <TooltipTrigger aria-label="API docs" className="absolute right-4 top-1/2 hidden -translate-y-1/2 sm:right-5 sm:flex">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/docs')}>
+                <BookOpen className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>API docs</TooltipContent>
+          </Tooltip>
         </header>
 
         <main className="relative z-10 flex flex-1 gap-3 overflow-hidden p-3">
@@ -558,14 +573,27 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => navigate('/docs')}>
+            <DockIcon onClick={spinEmail}>
               <Tooltip>
-                <TooltipTrigger aria-label="API docs">
-                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full')}>
-                    <BookOpen className="size-4" />
+                <TooltipTrigger aria-label="New address on this domain">
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
+                    generating && 'bg-muted text-foreground')}>
+                    <Shuffle className={cn('size-4', generating && 'opacity-50')} />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">API docs</TooltipContent>
+                <TooltipContent side="top" className="text-xs">New address · @{currentDomain}</TooltipContent>
+              </Tooltip>
+            </DockIcon>
+
+            <DockIcon onClick={() => setSound(s => { const next = !s; setSoundOn(next); return next })}>
+              <Tooltip>
+                <TooltipTrigger aria-label={sound ? 'Mute new-mail sound' : 'Unmute new-mail sound'}>
+                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
+                    !sound && 'text-muted-foreground')}>
+                    {sound ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">{sound ? 'Sound on' : 'Sound off'}</TooltipContent>
               </Tooltip>
             </DockIcon>
 

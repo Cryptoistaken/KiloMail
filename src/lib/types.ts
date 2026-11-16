@@ -1,6 +1,9 @@
 export interface MessageMeta {
   id: string
   from: string
+  /** The display name the sender set, e.g. "KERNEL". Empty for older mail captured before
+   *  the worker started reading the header instead of the envelope address. */
+  fromName?: string
   subject: string
   receivedAt: string
   read: boolean

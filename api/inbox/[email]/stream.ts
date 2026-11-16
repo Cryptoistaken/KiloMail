@@ -51,6 +51,7 @@ export default async function handler(req: Request): Promise<Response> {
               messages: messages.map((m: any) => ({
                 id:         m.id,
                 from:       m.from,
+                fromName:   m.fromName ?? "",
                 subject:    m.subject,
                 receivedAt: m.receivedAt,
                 read:       m.read ?? false,

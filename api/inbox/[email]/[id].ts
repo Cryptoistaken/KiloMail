@@ -17,6 +17,7 @@ const CORS = {
 interface MessageMeta {
   id: string;
   from: string;
+  fromName?: string;
   subject: string;
   receivedAt: string;
   read: boolean;
@@ -56,6 +57,7 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({
       id:         meta.id,
       from:       meta.from,
+      fromName:   meta.fromName ?? "",
       subject:    meta.subject,
       receivedAt: meta.receivedAt,
       read:       true,

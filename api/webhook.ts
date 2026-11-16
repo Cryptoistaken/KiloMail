@@ -12,6 +12,8 @@ const MAX_MESSAGES = 50;
 interface IncomingPayload {
   to: string;
   from: string;
+  /** Optional display name, e.g. "KERNEL". Older senders omit it. */
+  fromName?: string;
   subject: string;
   text: string;
   html: string;
@@ -20,6 +22,7 @@ interface IncomingPayload {
 interface MessageMeta {
   id: string;
   from: string;
+  fromName: string;
   subject: string;
   receivedAt: string;
   expiresAt: number;
@@ -46,6 +49,7 @@ export default async function handler(req: Request): Promise<Response> {
   const meta: MessageMeta = {
     id,
     from: body.from ?? "",
+    fromName: body.fromName ?? "",
     subject: body.subject ?? "(no subject)",
     receivedAt: now.toISOString(),
     expiresAt: now.getTime() + TTL * 1000,

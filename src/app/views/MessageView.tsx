@@ -3,6 +3,8 @@ import { Trash2, X, Mail, ChevronLeft, AlignLeft, Code2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import { SenderAvatar } from '@/app/components/SenderAvatar'
+import { senderLabel } from '@/lib/sender'
 import type { MessageFull } from '@/lib/types'
 
 interface MessageViewProps {
@@ -73,8 +75,6 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
     </div>
   )
 
-  const initials = message.from.slice(0, 2).toUpperCase()
-
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-4 py-3">
@@ -83,12 +83,12 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 md:hidden" onClick={onClose}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
-              {initials}
-            </div>
+            <SenderAvatar from={message.from} fromName={message.fromName} className="h-8 w-8 text-[11px]" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{message.subject || '(no subject)'}</p>
-              <p className="truncate text-xs text-muted-foreground">{message.from}</p>
+              <p className="truncate text-xs text-muted-foreground" title={message.from}>
+                {senderLabel(message)}
+              </p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">

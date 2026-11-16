@@ -23,11 +23,19 @@ export default {
       .filter(Boolean);
     if (!domains.some((d) => to.endsWith(`@${d}`))) return;
 
+    // `message.from` is the ENVELOPE sender (the hidden Return-Path). For bulk mail that is a
+    // machine token like 010001a1dc...-000000@envelope.sup.kernel.sh, which reads like garbage.
+    // The header From (parsed.from) is what the sender actually wrote - name plus address.
+    const headerFrom = parsed.from ?? null;
+    const fromAddress = headerFrom?.address?.trim() || message.from || "";
+    const fromName = (headerFrom?.name ?? "").trim();
+
     const id = crypto.randomUUID();
     const now = Date.now();
     const meta = JSON.stringify({
       id,
-      from: message.from ?? "",
+      from: fromAddress,
+      fromName,
       subject: parsed.subject ?? "(no subject)",
       receivedAt: new Date(now).toISOString(),
       expiresAt: now + TTL * 1000,
