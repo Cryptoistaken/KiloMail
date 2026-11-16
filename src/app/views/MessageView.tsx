@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { cn } from '@/lib/utils'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
 import { addressOnly, senderAddress, senderDisplayName, senderLabel, senderFull } from '@/lib/sender'
 import type { MessageFull } from '@/lib/types'
 
@@ -55,9 +56,22 @@ function clockTime(ms: number): string {
     : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+/** A details-row value: for the sender, the name picked out and the address dimmed, as in the header. */
+function DetailValue({ label, value }: { label: string; value: string }) {
+  const m = /^(.*?)\s*<([^>]+)>$/.exec(value)
+  if (!m || (label !== 'From' && label !== 'Reply-To')) return <>{value}</>
+  return (
+    <>
+      <span className="font-semibold">{m[1]}</span>{' '}
+      <span className="text-muted-foreground">{`<${m[2]}>`}</span>
+    </>
+  )
+}
+
 export function MessageView({ message, loading, inboxEmail, onClose, onDelete }: MessageViewProps) {
   const [view, setView] = useState<'html' | 'text'>('html')
   const [showDetails, setShowDetails] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const detailsRef = useRef<HTMLSpanElement>(null)
 
@@ -114,7 +128,17 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
       fit()
       inner?.addEventListener('load', fit)
       const late = setTimeout(fit, 300) // images can land after load and change the width
-      return () => { clearTimeout(late); inner?.removeEventListener('load', fit) }
+
+      // A click in the mail itself cannot reach the page (that is how iframes work), but we wrote
+      // this document, so we can listen inside it and close the details there too.
+      const onDown = () => setShowDetails(false)
+      doc.addEventListener('mousedown', onDown)
+
+      return () => {
+        clearTimeout(late)
+        inner?.removeEventListener('load', fit)
+        doc.removeEventListener('mousedown', onDown)
+      }
     }
   }, [message?.html, message?.id, view])
 
@@ -207,7 +231,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
                 </button>
               </div>
             )}
-            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={onDelete} aria-label="Delete message">
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => setConfirmDelete(true)} aria-label="Delete message">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 hidden md:flex" onClick={onClose} aria-label="Close">
@@ -250,8 +274,10 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
                 <div className="absolute top-full left-0 z-30 mt-2 grid w-max max-w-[min(26rem,calc(100vw-5rem))] grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-background p-3 shadow-2xl">
                   {details.map(([k, v]) => (
                     <div key={k} className="contents">
-                      <span className="text-right text-[11px] text-muted-foreground">{k}</span>
-                      <span className="min-w-0 break-words font-mono text-[11px] leading-relaxed">{v}</span>
+                      <span className="text-right text-[11px] text-muted-foreground">{k}:</span>
+                      <span className="min-w-0 break-words font-mono text-[11px] leading-relaxed">
+                        <DetailValue label={k} value={v} />
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -282,6 +308,16 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
 
         }
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this message?"
+          body={`"${message.subject || '(no subject)'}" from ${senderLabel(message)} is removed for good.`}
+          confirmLabel="Delete"
+          onConfirm={() => { setConfirmDelete(false); onDelete() }}
+          onClose={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   )
 }

@@ -31,10 +31,11 @@ import {
   type Panel, type MessageMeta, type MessageFull,
 } from '@/lib/types'
 import { saveToHistory, updateMessageCount } from '@/lib/history'
-import { useHashRoute, navigate } from '@/hooks/useHashRoute'
+import { useRoute, navigate, isEmailPath } from '@/hooks/useRoute'
 import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 import { extractCode, subjectCode } from '@/lib/codes'
+import { extractActionLink } from '@/lib/links'
 import { playChime, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
 
 // "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
@@ -124,9 +125,17 @@ function CustomInboxModal({ onConfirm, onClose }: { onConfirm: (email: string) =
 }
 
 export default function App() {
-  const route = useHashRoute()
+  const route = useRoute()
+  // kilomail.tech/<email> opens that inbox, so a link can be shared and reopened.
+  const routePath = route.replace(/^\//, '')
+  const routeEmail = isEmailPath(routePath) ? decodeURIComponent(routePath) : null
+  const onInbox = route === '/inbox' || routeEmail !== null
 
-  const [email,      setEmail]      = useState(() => getOrCreateInbox())
+  const [email,      setEmail]      = useState(() => {
+    // Opening kilomail.tech/<email> both shows that inbox and makes it the one you come back to.
+    if (routeEmail) { persistInbox(routeEmail); return routeEmail }
+    return getOrCreateInbox()
+  })
   const [editing,    setEditing]    = useState(false)
   const [editValue,  setEditValue]  = useState('')
   const [editDomain, setEditDomain] = useState(DEFAULT_DOMAIN)
@@ -141,6 +150,7 @@ export default function App() {
   const [newMenuOpen,  setNewMenuOpen]  = useState(false)
   const [customModal,  setCustomModal]  = useState(false)
   const [bodyCodes,    setBodyCodes]    = useState<Record<string, string>>({})
+  const [bodyLinks,    setBodyLinks]    = useState<Record<string, string>>({})
   const [menuTab,      setMenuTab]      = useState<'own' | 'third'>('own')
   const [generating,   setGenerating]   = useState(false)
   const [refreshing,   setRefreshing]   = useState(false)
@@ -189,14 +199,21 @@ export default function App() {
   const prefetchBodyCodes = useCallback(async (addr: string, msgs: MessageMeta[]) => {
     const targets = msgs.filter(m => !subjectCode(m.subject) && !msgCache.current.has(m.id))
     if (!targets.length) return
-    const results: Record<string, string> = {}
+    const codes: Record<string, string> = {}
+    const links: Record<string, string> = {}
     await Promise.all(targets.map(async m => {
       const full = await fetchFullMsg(addr, m)
       if (!full) return
       const code = extractCode(full.text ?? '', full.html ?? '')
-      if (code) results[m.id] = code
+      if (code) codes[m.id] = code
+      // A mail that carries a code does not need its link offered too - the list shows one chip.
+      else {
+        const link = extractActionLink(full.text ?? '', full.html ?? '')
+        if (link) links[m.id] = link
+      }
     }))
-    if (Object.keys(results).length) setBodyCodes(prev => ({ ...prev, ...results }))
+    if (Object.keys(codes).length) setBodyCodes(prev => ({ ...prev, ...codes }))
+    if (Object.keys(links).length) setBodyLinks(prev => ({ ...prev, ...links }))
   }, [fetchFullMsg])
 
   const prefetchRef = useRef(prefetchBodyCodes)
@@ -206,7 +223,7 @@ export default function App() {
     persistInbox(next)
     setEmail(next); setMessages([]); setSelectedId(null)
     setFullMsg(null); readIds.current.clear()
-    msgCache.current.clear(); setBodyCodes({})
+    msgCache.current.clear(); setBodyCodes({}); setBodyLinks({})
     chimeArmed.current = false; seenIds.current = new Set()
     // Kill the previous inbox's stream right now. Waiting for the effect cleanup leaves a
     // window where a late update from the old address lands under the new one, which looks
@@ -279,13 +296,27 @@ export default function App() {
 
   const didAutoCopyRef = useRef(false)
   useEffect(() => {
-    if (route !== '/inbox' || didAutoCopyRef.current) return
+    if (!onInbox || didAutoCopyRef.current) return
     didAutoCopyRef.current = true
     autoCopy(email)
   }, [route]) // eslint-disable-line
 
+  // A real path, not a hash. Following a link (or pressing Back) opens that inbox; a change made
+  // in the app is ignored here, which is what keeps the two from fighting each other.
+  const lastRoute = useRef(route)
   useEffect(() => {
-    if (route !== '/inbox') return
+    if (lastRoute.current === route) return
+    lastRoute.current = route
+    if (routeEmail && routeEmail.toLowerCase() !== email.toLowerCase()) resetInbox(routeEmail)
+  }, [route]) // eslint-disable-line
+
+  // Share what you are reading: the address bar always shows the inbox that is open.
+  useEffect(() => {
+    if (onInbox && email) navigate(`/${email}`, true)
+  }, [onInbox, email])
+
+  useEffect(() => {
+    if (!onInbox) return
     saveToHistory(email)
     loadInbox(email)
     startStream(email)
@@ -502,7 +533,7 @@ export default function App() {
             <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}>
               <InboxView email={email} messages={messages} loading={loading} connected={connected}
                 selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
-                onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes}
+                onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes} bodyLinks={bodyLinks}
                 sound={sound} onToggleSound={() => setSound(s => { const next = !s; setSoundOn(next); return next })}
                 canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
               />

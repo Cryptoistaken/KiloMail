@@ -32,6 +32,9 @@ function scrub(s: string): string {
 function stripHtml(html: string): string {
   return html
     .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, ' ') // CSS/JS blocks: full of hex colours that look like codes
+    // An escaped ampersand is still an ampersand - turning it into a space split link URLs in half
+    // and left their query string behind ("...token=mpVim-..."), which then read as a code.
+    .replace(/&(?:amp|#38|#x26);/gi, '&')
     .replace(/<[^>]*>/g, ' ')
     .replace(/&[a-z#0-9]+;/gi, ' ')
     .replace(/\s+/g, ' ')

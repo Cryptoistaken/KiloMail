@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Check, Volume2, VolumeX } from 'lucide-react'
+import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Check, Link2, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageSkeleton } from '@/app/components/MessageSkeleton'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
-import { senderFull, senderSecondary } from '@/lib/sender'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
+import { senderFull, senderLabel, senderSecondary } from '@/lib/sender'
 import { subjectCode } from '@/lib/codes'
 import type { MessageMeta } from '@/lib/types'
 
@@ -19,6 +20,8 @@ interface InboxViewProps {
   onRefresh: () => void
   refreshing: boolean
   bodyCodes: Record<string, string>
+  /** The one link a verification mail exists for, when it carries no code. */
+  bodyLinks: Record<string, string>
   canDelete: boolean
   /** New-mail sound: on by default, toggled from the list header. */
   sound: boolean
@@ -27,14 +30,21 @@ interface InboxViewProps {
 
 export function InboxView({
   email, messages, loading, connected,
-  selected, onSelect, onDelete, onRefresh, refreshing, bodyCodes, canDelete,
+  selected, onSelect, onDelete, onRefresh, refreshing, bodyCodes, bodyLinks, canDelete,
   sound, onToggleSound,
 }: InboxViewProps) {
   const [deleteState, setDeleteState] = useState<Record<string, 'deleting' | 'deleted'>>({})
+  const [confirmMsg, setConfirmMsg] = useState<MessageMeta | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
 
   function getCode(msg: MessageMeta): string | null {
     return subjectCode(msg.subject) ?? bodyCodes[msg.id] ?? null
+  }
+
+  /** One chip per row: the code when the mail has one, otherwise the link it exists for. */
+  function getLink(msg: MessageMeta): string | null {
+    return getCode(msg) ? null : (bodyLinks[msg.id] ?? null)
   }
 
   const handleCopy = async (e: React.MouseEvent, msg: MessageMeta) => {
@@ -46,8 +56,16 @@ export function InboxView({
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleCopyLink = async (e: React.MouseEvent, msg: MessageMeta) => {
     e.stopPropagation()
+    const link = getLink(msg)
+    if (!link) return
+    await navigator.clipboard.writeText(link)
+    setCopiedLinkId(msg.id)
+    setTimeout(() => setCopiedLinkId(null), 2000)
+  }
+
+  const handleDelete = async (id: string) => {
     setDeleteState(s => ({ ...s, [id]: 'deleting' }))
     try {
       await onDelete(id)
@@ -160,9 +178,26 @@ export function InboxView({
                       }
                     </button>
                   )}
+                  {getLink(msg) && (
+                    <button
+                      onClick={e => handleCopyLink(e, msg)}
+                      title={`Copy link ${getLink(msg)}`}
+                      className={cn(
+                        'shrink-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
+                        copiedLinkId === msg.id
+                          ? 'bg-muted text-muted-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      {copiedLinkId === msg.id
+                        ? <><Check className="h-3 w-3" /> Copied</>
+                        : <><Link2 className="h-3 w-3" /> Link</>
+                      }
+                    </button>
+                  )}
                   {canDelete && (
                     <button
-                      onClick={e => handleDelete(e, msg.id)}
+                      onClick={e => { e.stopPropagation(); setConfirmMsg(msg) }}
                       disabled={!!ds}
                       className={cn(
                         'ml-1 shrink-0 p-0.5 rounded transition-all',
@@ -185,6 +220,16 @@ export function InboxView({
           </div>
         )}
       </div>
+
+      {confirmMsg && (
+        <ConfirmDialog
+          title="Delete this message?"
+          body={`"${confirmMsg.subject || '(no subject)'}" from ${senderLabel(confirmMsg)} is removed for good.`}
+          confirmLabel="Delete"
+          onConfirm={() => { const id = confirmMsg.id; setConfirmMsg(null); void handleDelete(id) }}
+          onClose={() => setConfirmMsg(null)}
+        />
+      )}
     </div>
   )
 }

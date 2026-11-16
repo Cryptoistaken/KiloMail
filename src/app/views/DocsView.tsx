@@ -6,7 +6,7 @@ import {
 import { useState } from 'react'
 import { ALL_PROVIDERS } from '@/providers/registry'
 import type { ProviderPlugin } from '@/providers/types'
-import { navigate } from '@/hooks/useHashRoute'
+import { navigate } from '@/hooks/useRoute'
 
 // Same-origin, so the examples match whichever address the site is opened on
 // (kilomail.tech, kilomail.vercel.app, or a preview URL).

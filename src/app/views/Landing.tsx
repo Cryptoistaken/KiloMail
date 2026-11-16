@@ -9,7 +9,7 @@ import {  ALL_PROVIDERS } from '@/providers/registry'
 
 // Own domains (the ones we host) — same source as the "Own" tab in the app.
 const OWN_DOMAINS = ALL_PROVIDERS.filter(p => p.id === 'kilolabs').flatMap(p => p.domains)
-import { navigate } from '@/hooks/useHashRoute'
+import { navigate } from '@/hooks/useRoute'
 import { Background } from '@/app/components/Background'
 import { Logo } from '@/app/components/Logo'
 

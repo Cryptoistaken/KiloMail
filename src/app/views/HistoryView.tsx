@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { History, Mail, RefreshCw, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
 import { senderFull } from '@/lib/sender'
 import { getProvider } from '@/providers/registry'
 import { loadHistory, updateMessageCount, clearHistory, MAX_HISTORY, type HistoryEntry } from '@/lib/history'
@@ -21,6 +22,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
   const [inboxes, setInboxes] = useState<Record<string, MessageMeta[]>>({})
   const [busy, setBusy] = useState(false)
   const [query, setQuery] = useState('')
+  const [confirmClear, setConfirmClear] = useState(false)
   const runRef = useRef(0)
 
   /** Re-fetch every saved inbox so the counts are real and search can look inside the mail. */
@@ -99,7 +101,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
             <Button
               variant="ghost" size="sm"
               className="h-7 text-xs text-destructive hover:text-destructive"
-              onClick={handleClear}
+              onClick={() => setConfirmClear(true)}
             >
               Clear all
             </Button>
@@ -204,6 +206,16 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
           </div>
         )}
       </div>
+
+      {confirmClear && (
+        <ConfirmDialog
+          title="Clear all history?"
+          body={`${entries.length} saved ${entries.length === 1 ? 'address' : 'addresses'} and their mail are removed from this list. The inboxes themselves are untouched.`}
+          confirmLabel="Clear all"
+          onConfirm={() => { setConfirmClear(false); handleClear() }}
+          onClose={() => setConfirmClear(false)}
+        />
+      )}
     </div>
   )
 }
