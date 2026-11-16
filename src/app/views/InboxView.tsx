@@ -47,6 +47,11 @@ export function InboxView({
     return getCode(msg) ? null : (bodyLinks[msg.id] ?? null)
   }
 
+  /** The URL as it can be shown in a chip: no scheme, cut off by the button's own width. */
+  function shortLink(msg: MessageMeta): string {
+    return (getLink(msg) ?? '').replace(/^https?:\/\//i, '')
+  }
+
   const handleCopy = async (e: React.MouseEvent, msg: MessageMeta) => {
     e.stopPropagation()
     const code = getCode(msg)
@@ -144,7 +149,7 @@ export function InboxView({
                   )}
                 >
                   <SenderAvatar from={msg.from} fromName={msg.fromName} className="mt-0.5 h-8 w-8 text-xs" />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-[6rem] flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1.5">
                         {!msg.read && (
@@ -183,15 +188,15 @@ export function InboxView({
                       onClick={e => handleCopyLink(e, msg)}
                       title={`Copy link ${getLink(msg)}`}
                       className={cn(
-                        'shrink-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
+                        'flex min-w-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
                         copiedLinkId === msg.id
                           ? 'bg-muted text-muted-foreground'
                           : 'bg-primary/10 text-primary hover:bg-primary/20'
                       )}
                     >
                       {copiedLinkId === msg.id
-                        ? <><Check className="h-3 w-3" /> Copied</>
-                        : <><Link2 className="h-3 w-3" /> Link</>
+                        ? <><Check className="h-3 w-3 shrink-0" /> Copied</>
+                        : <><Link2 className="h-3 w-3 shrink-0" /> <span className="min-w-0 max-w-[9rem] truncate">{shortLink(msg)}</span></>
                       }
                     </button>
                   )}
