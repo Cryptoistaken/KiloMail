@@ -64,6 +64,7 @@ export function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }:
             variant="destructive"
             size="sm"
             className="h-8 min-w-[5rem] text-xs"
+            data-buzz="heavy"
             onClick={onConfirm}
           >
             {confirmLabel}

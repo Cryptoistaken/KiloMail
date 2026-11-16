@@ -168,6 +168,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
                     <button
                       key={m.id}
                       onClick={() => onSwitch(entry.email, m.id)}
+                      data-buzz="medium"
                       className="flex w-full items-start gap-2.5 bg-muted/20 py-2 pl-6 pr-4 text-left transition-colors hover:bg-muted/50"
                     >
                       <SenderAvatar from={m.from} fromName={m.fromName} className="mt-0.5 h-5 w-5 text-[9px]" />
@@ -187,6 +188,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
               <button
                 key={entry.email}
                 onClick={() => onSwitch(entry.email)}
+                data-buzz="medium"
                 className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
               >
                 <div className="min-w-0 flex-1">

@@ -1,24 +1,37 @@
 /**
- * The little touch that answers a finger. Phones buzz; desktop Chrome has no vibrator and quietly
- * ignores it, so the guard is all the platform detection this needs.
+ * The touch that answers a finger - weighted, not uniform: a press, a change, or something that
+ * cannot be undone should not feel the same. Phones buzz; desktop Chrome has no vibrator and
+ * quietly ignores it, so the guard is all the platform detection this needs.
  */
-export function buzz(pattern: number | number[] = 8): void {
-  try { navigator.vibrate?.(pattern) } catch {}
+export type Weight = 'light' | 'medium' | 'heavy'
+
+const PATTERNS: Record<Weight, number | number[]> = {
+  light: 8,             // an ordinary press: copy, refresh, a tab, the caret
+  medium: 22,           // something actually changed: another inbox, a new address, a mail opened
+  heavy: [16, 34, 26],  // gone for good: delete, clear all
+}
+
+export function buzz(weight: Weight = 'light'): void {
+  try { navigator.vibrate?.(PATTERNS[weight]) } catch {}
 }
 
 /** Anything a finger is meant to press. */
-const PRESSABLE = 'button, a, [role="button"], label, input[type="checkbox"], input[type="radio"], summary'
+const PRESSABLE = '[data-buzz], button, a, [role="button"], label, input[type="checkbox"], input[type="radio"], summary'
 
 /**
- * One listener instead of wiring every button: a press buzzes, and (while the sound setting is on)
- * ticks. `data-silent` on an element skips its tick sound - the new-mail chime has its own button.
+ * One listener instead of wiring every button. The weight comes from the nearest `data-buzz`, so a
+ * chip inside a mail row still feels like the small button it is, and anything that is not a
+ * control - plain text, the mail body, scrolling - never buzzes at all.
  */
-export function installTapFeedback(soundEnabled: () => boolean, onTap: () => void): () => void {
+export function installPressFeedback(): () => void {
+  let last = 0
   const onDown = (e: PointerEvent) => {
     const el = (e.target as Element | null)?.closest?.(PRESSABLE) as HTMLElement | null
-    if (!el || el.hasAttribute('data-silent')) return
-    buzz()
-    if (soundEnabled()) onTap()
+    if (!el) return
+    const now = performance.now()
+    if (now - last < 90) return // one press, one buzz - never two from nested elements
+    last = now
+    buzz((el.getAttribute('data-buzz') as Weight | null) ?? 'light')
   }
   document.addEventListener('pointerdown', onDown, { capture: true, passive: true })
   return () => document.removeEventListener('pointerdown', onDown, { capture: true })

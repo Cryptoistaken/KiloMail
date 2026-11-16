@@ -81,10 +81,10 @@ export function Landing({ onLaunch }: LandingProps) {
                 . No sign-up. No tracking. Just mail.
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-                <Button size="lg" onClick={onLaunch} className="h-11 gap-2 px-6 text-sm font-semibold shadow-lg shadow-primary/20">
+                <Button size="lg" onClick={onLaunch} data-buzz="medium" className="h-11 gap-2 px-6 text-sm font-semibold shadow-lg shadow-primary/20">
                   Open Inbox <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" onClick={onLaunch} className="h-11 px-6 text-sm font-medium">
+                <Button size="lg" variant="outline" onClick={onLaunch} data-buzz="medium" className="h-11 px-6 text-sm font-medium">
                   Generate address
                 </Button>
               </div>

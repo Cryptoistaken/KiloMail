@@ -230,7 +230,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
                 </button>
               </div>
             )}
-            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => setConfirmDelete(true)} aria-label="Delete message">
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" data-buzz="medium" onClick={() => setConfirmDelete(true)} aria-label="Delete message">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 hidden md:flex" onClick={onClose} aria-label="Close">

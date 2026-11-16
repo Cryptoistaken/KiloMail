@@ -132,6 +132,7 @@ export function InboxView({
                   key={msg.id}
                   role="button"
                   tabIndex={0}
+                  data-buzz="medium"
                   onClick={() => onSelect(msg.id)}
                   onKeyDown={e => e.key === 'Enter' && onSelect(msg.id)}
                   className={cn(

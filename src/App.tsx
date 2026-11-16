@@ -37,8 +37,8 @@ import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers
 import { extractCode, subjectCode } from '@/lib/codes'
 import { extractActionLink } from '@/lib/links'
 import { arrivalOf } from '@/lib/ago'
-import { playChime, playTap, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
-import { installTapFeedback } from '@/lib/haptics'
+import { playChime, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
+import { installPressFeedback } from '@/lib/haptics'
 
 // "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
 // Every other domain belongs to a third-party inbox that the api/providers proxies talk to.
@@ -181,9 +181,8 @@ export default function App() {
     return () => events.forEach(e => window.removeEventListener(e, unlock))
   }, [])
 
-  // Every press answers back: a buzz where the device has one, and the quiet tick while the sound
-  // setting is on. One listener covers the whole app.
-  useEffect(() => installTapFeedback(() => soundRef.current, playTap), [])
+  // Every press answers back with a short buzz (phones only).
+  useEffect(() => installPressFeedback(), [])
 
   const autoCopy = useCallback((addr: string) => {
     navigator.clipboard.writeText(addr).then(() => {
@@ -483,7 +482,7 @@ export default function App() {
                     {ALL_PROVIDERS.filter(p => !p.createEmail).flatMap(p => p.domains).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
-                <Button aria-label="Confirm" size="icon" className="h-8 w-8" onMouseDown={e => e.preventDefault()} onClick={confirmEdit}>
+                <Button aria-label="Confirm" size="icon" className="h-8 w-8" data-buzz="medium" onMouseDown={e => e.preventDefault()} onClick={confirmEdit}>
                   <Check className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -493,6 +492,7 @@ export default function App() {
                   <TooltipTrigger aria-label="New address on this domain">
                     <Button variant="ghost" size="icon"
                       className="h-8 w-8 shrink-0 transition-transform active:scale-90"
+                      data-buzz="medium"
                       disabled={generating} onClick={spinEmail}>
                       <Shuffle className={cn('h-4 w-4', generating && 'opacity-50')} />
                     </Button>
@@ -611,7 +611,7 @@ export default function App() {
 
           <Dock
             className="mt-0 h-[66px] gap-1.5 rounded-2xl border border-border/60 bg-background/80 px-3 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/30">
-            <DockIcon onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
+            <DockIcon data-buzz="medium" onClick={() => { setPanel('inbox'); setSelectedId(null); setFullMsg(null) }}>
               <Tooltip>
                 <TooltipTrigger aria-label="Inbox">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'relative size-10 rounded-full',
@@ -628,7 +628,7 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={() => setPanel('history')}>
+            <DockIcon data-buzz="medium" onClick={() => setPanel('history')}>
               <Tooltip>
                 <TooltipTrigger aria-label="History">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
@@ -652,7 +652,7 @@ export default function App() {
               </Tooltip>
             </DockIcon>
 
-            <DockIcon onClick={spinEmail}>
+            <DockIcon data-buzz="medium" onClick={spinEmail}>
               <Tooltip>
                 <TooltipTrigger aria-label="New address on this domain">
                   <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
