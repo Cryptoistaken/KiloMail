@@ -59,8 +59,24 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
   const [view, setView] = useState<'html' | 'text'>('html')
   const [showDetails, setShowDetails] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const detailsRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => { setView('html'); setShowDetails(false) }, [message?.id])
+
+  // The details float over the message, so close them the way a popup should: click away or Esc.
+  useEffect(() => {
+    if (!showDetails) return
+    const onDown = (e: MouseEvent) => {
+      if (!detailsRef.current?.contains(e.target as Node)) setShowDetails(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowDetails(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showDetails])
 
   useEffect(() => {
     if (message?.html && iframeRef.current && view === 'html') {
@@ -137,7 +153,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-4 py-3">
+      <div className="relative z-20 border-b border-border px-4 py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 md:hidden" onClick={onClose}>
@@ -173,26 +189,28 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
               </p>
             </div>
 
-            <button
-              onClick={() => setShowDetails(v => !v)}
-              aria-expanded={showDetails}
-              title={showDetails ? 'Hide details' : 'Show details'}
-              className="-ml-1 mt-0.5 flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              to {recipient}
-              <ChevronDown className={cn('h-3 w-3 transition-transform', showDetails && 'rotate-180')} />
-            </button>
+            <span ref={detailsRef} className="relative -ml-1 mt-0.5 inline-block">
+              <button
+                onClick={() => setShowDetails(v => !v)}
+                aria-expanded={showDetails}
+                title={showDetails ? 'Hide details' : 'Show details'}
+                className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                to {recipient}
+                <ChevronDown className={cn('h-3 w-3 transition-transform', showDetails && 'rotate-180')} />
+              </button>
 
-            {showDetails && (
-              <div className="mt-2 grid grid-cols-[74px_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-muted/30 p-2.5">
-                {details.map(([k, v]) => (
-                  <div key={k} className="contents">
-                    <span className="text-right text-[11px] text-muted-foreground">{k}</span>
-                    <span className="break-words font-mono text-[11px] leading-relaxed">{v}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+              {showDetails && (
+                <div className="absolute top-full left-0 z-30 mt-2 grid w-[312px] max-w-[calc(100vw-2.5rem)] grid-cols-[74px_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-background p-3 shadow-2xl">
+                  {details.map(([k, v]) => (
+                    <div key={k} className="contents">
+                      <span className="text-right text-[11px] text-muted-foreground">{k}</span>
+                      <span className="break-words font-mono text-[11px] leading-relaxed">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </span>
           </div>
         </div>
 
