@@ -186,7 +186,7 @@ export function InboxView({
                         'shrink-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
                         copiedLinkId === msg.id
                           ? 'bg-muted text-muted-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20'
                       )}
                     >
                       {copiedLinkId === msg.id
