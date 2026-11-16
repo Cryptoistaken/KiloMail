@@ -115,16 +115,15 @@ third-party inbox behind an `api/providers/<id>.ts` proxy. Public API reference:
 
 ## Browser extension
 
-`extension/` is a Manifest V3 side panel — a small KiloMail client, not an iframe wrapper. It calls the
-public API on `https://kilomail.tech` directly, so it needs no build step and no key.
+`extension/` is a Manifest V3 side panel that loads the live site in a full-bleed iframe. It is a thin
+wrapper on purpose — the whole app (address editing, history, docs, theme) is the website itself.
 
-- Live inbox over SSE, OTP codes lifted out of the subject (and the body, when there is no code in the subject)
-- Delete, copy address, edit the local part, one-click new address on the current domain
-- Light/dark, following the system theme on first run
-- Own domains only. Inbox lives in `localStorage`, so it is separate from the website's.
+- No build step, no API key, nothing to configure; four files total.
+- The site sends no `X-Frame-Options` and no CSP, so it frames cleanly — no header-rewriting rules needed.
+- `allow="clipboard-read; clipboard-write"` is delegated to the iframe, otherwise the site's copy buttons,
+  which need a cross-origin permission grant, would silently fail.
+- The panel is its own origin, so its `localStorage` (current address, history) does **not** share with a
+  normal browser tab.
 
-Load it: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick the `extension/` folder.
-Clicking the toolbar icon opens the panel.
-
-The panel palette mirrors `src/index.css` (same shadcn neutral tokens), and the logo is the same inline
-Bazel mark the site uses, drawn with `currentColor` so it follows the theme.
+Load it: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → pick the `extension/`
+folder. The toolbar icon opens the panel. Hit **Reload** after changing the manifest or the icons.

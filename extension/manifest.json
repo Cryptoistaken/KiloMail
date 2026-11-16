@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "KiloMail",
-  "version": "1.1.0",
-  "description": "Your KiloMail disposable inbox in the browser side panel — free, real-time, no sign-up, no API key.",
+  "version": "1.2.0",
+  "description": "KiloMail in your browser side panel.",
   "minimum_chrome_version": "114",
   "action": {
     "default_title": "Open KiloMail sidebar",
