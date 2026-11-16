@@ -6,7 +6,11 @@ interface LogoProps {
   alt?: string
 }
 
-/** Bazel mark — `currentColor` so it follows the theme (light/dark) automatically. */
+// Pure black on light / pure white on dark — not the theme's off-black/off-white,
+// so the mark stays crisp. `currentColor` does the theme switch.
+const TONE = 'text-black dark:text-white'
+
+/** Bazel mark, drawn inline so it follows the theme. */
 function Mark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 128 128" aria-hidden="true" className={className} focusable="false">
@@ -24,7 +28,7 @@ export function Logo({ variant = 'icon', className, alt = 'KiloMail' }: LogoProp
       <span
         role="img"
         aria-label={alt}
-        className={cn('inline-flex items-center gap-2 text-foreground', className)}
+        className={cn('inline-flex items-center gap-2', TONE, className)}
       >
         <Mark className="h-6 w-6 shrink-0" />
         <span className="text-base font-semibold tracking-tight">KiloMail</span>
@@ -33,7 +37,7 @@ export function Logo({ variant = 'icon', className, alt = 'KiloMail' }: LogoProp
   }
 
   return (
-    <span role="img" aria-label={alt} className={cn('inline-flex text-foreground', className)}>
+    <span role="img" aria-label={alt} className={cn('inline-flex', TONE, className)}>
       <Mark className="h-full w-full" />
     </span>
   )

@@ -8,15 +8,19 @@ const OWN_DOMAINS = ['kilomail.tech', 'kilomail.my.id', 'kilosms.web.id', 'facto
 
 const EMAIL_KEY = 'kilomail_current_email'
 const THEME_KEY = 'theme'
+const HISTORY_KEY = 'kilomail_history'
+const MAX_HISTORY = 50
 
 const $ = (id) => document.getElementById(id)
 const el = {
-  theme: $('theme'), openTab: $('open-tab'),
+  openTab: $('open-tab'),
+  address: document.querySelector('.address'), meta: document.querySelector('.meta'),
   newAddr: $('new'), addr: $('addr'), addrName: $('addr-name'), addrDomain: $('addr-domain'),
   copy: $('copy'),
   editor: $('editor'), editName: $('edit-name'), editDomain: $('edit-domain'), editSave: $('edit-save'),
   count: $('count'), live: $('live'), liveText: $('live-text'), refresh: $('refresh'),
-  list: $('list'), msg: $('msg'), toast: $('toast'),
+  list: $('list'), msg: $('msg'), history: $('history'),
+  dock: $('dock'), menu: $('domain-menu'), toast: $('toast'),
 }
 
 const icon = (name, cls = 'icon') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`
@@ -55,6 +59,7 @@ let email = (() => {
 let messages = []
 let selectedId = null
 let fullMsg = null
+let panel = 'inbox'
 let connected = false
 let loading = true
 let refreshing = false
@@ -70,6 +75,27 @@ const SUBJECT_CODE = /\b(\d{4,8})\b/
 
 const currentDomain = () => email.split('@')[1] || OWN_DOMAINS[0]
 const inboxUrl = () => `${BASE}/api/inbox/${encodeURIComponent(email)}`
+const isDark = () => document.documentElement.classList.contains('dark')
+const stamp = (t) => new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+/* ------------------------------------------------------------------ history */
+
+const loadHistory = () => { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') } catch { return [] } }
+const saveHistory = (h) => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, MAX_HISTORY))) } catch {} }
+
+function saveToHistory(addr) {
+  const h = loadHistory()
+  const i = h.findIndex((e) => e.email === addr)
+  if (i >= 0) { h[i].usedAt = Date.now(); h[i].count += 1 }
+  else h.unshift({ email: addr, usedAt: Date.now(), count: 1, messageCount: 0 })
+  saveHistory(h.sort((a, b) => b.usedAt - a.usedAt))
+}
+
+function updateMessageCount(addr, count) {
+  const h = loadHistory()
+  const i = h.findIndex((e) => e.email === addr)
+  if (i >= 0 && h[i].messageCount !== count) { h[i].messageCount = count; saveHistory(h) }
+}
 
 /* -------------------------------------------------------------------- api */
 
@@ -85,6 +111,7 @@ async function loadInbox({ silent = false } = {}) {
 
 function applyMessages(list) {
   messages = list.map((m) => ({ ...m, read: readIds.has(m.id) || m.read }))
+  updateMessageCount(email, messages.length)
   render()
   prefetchCodes()
 }
@@ -92,7 +119,6 @@ function applyMessages(list) {
 function startStream() {
   stopStream?.()
   stopStream = null
-  connected = false
   setLive(false)
   try {
     const es = new EventSource(`${inboxUrl()}/stream`)
@@ -156,10 +182,18 @@ const codeFor = (m) => bodyCodes[m.id] ?? (m.subject?.match(SUBJECT_CODE)?.[1] ?
 
 /* ------------------------------------------------------------------ theme */
 
+// Chrome cannot give an extension a theme-aware *toolbar* PNG, so ship both marks and
+// swap on the browser theme (the panel page is the only place we can read it).
+const ACTION_ICONS = {
+  light: { 16: 'icons/on-light/16.png', 32: 'icons/on-light/32.png', 48: 'icons/on-light/48.png', 128: 'icons/on-light/128.png' },
+  dark:  { 16: 'icons/on-dark/16.png',  32: 'icons/on-dark/32.png',  48: 'icons/on-dark/48.png',  128: 'icons/on-dark/128.png' },
+}
+
 function applyTheme(t) {
   document.documentElement.classList.toggle('dark', t === 'dark')
-  el.theme.innerHTML = icon(t === 'dark' ? 'sun' : 'moon')
   save(THEME_KEY, t)
+  try { globalThis.chrome?.action?.setIcon({ path: ACTION_ICONS[t === 'dark' ? 'dark' : 'light'] }) } catch { /* not in an extension context */ }
+  syncDock()
 }
 
 /* --------------------------------------------------------------- rendering */
@@ -179,15 +213,41 @@ function setLive(on) {
 }
 
 function render() {
-  el.addrName.textContent = email.split('@')[0]
-  el.addrDomain.textContent = '@' + currentDomain()
-  el.count.textContent = loading
-    ? 'loading…'
-    : `${messages.length} message${messages.length === 1 ? '' : 's'}`
+  const onHistory = panel === 'history'
 
-  if (loading) { el.list.innerHTML = skeletons(); return }
-  if (!messages.length) { el.list.innerHTML = emptyState(); return }
-  el.list.innerHTML = messages.map(rowHtml).join('')
+  el.address.hidden = onHistory
+  el.meta.hidden = onHistory
+  el.history.hidden = !onHistory
+  el.list.hidden = onHistory || selectedId !== null
+  el.msg.hidden = onHistory || selectedId === null
+
+  if (onHistory) {
+    renderHistory()
+  } else {
+    el.addrName.textContent = email.split('@')[0]
+    el.addrDomain.textContent = '@' + currentDomain()
+    el.count.textContent = loading
+      ? 'loading…'
+      : `${messages.length} message${messages.length === 1 ? '' : 's'}`
+
+    if (selectedId === null) {
+      el.msg.innerHTML = ''
+      el.list.innerHTML = loading
+        ? skeletons()
+        : (!messages.length ? emptyState() : messages.map(rowHtml).join(''))
+    } else {
+      paintMessage()
+    }
+  }
+
+  syncDock()
+}
+
+function syncDock() {
+  el.dock.querySelector('[data-dock="inbox"]').classList.toggle('on', panel === 'inbox' && selectedId === null)
+  el.dock.querySelector('[data-dock="history"]').classList.toggle('on', panel === 'history')
+  el.dock.querySelector('[data-dock="new"]').classList.toggle('open', !el.menu.hidden)
+  el.dock.querySelector('[data-dock="theme"]').innerHTML = icon(isDark() ? 'sun' : 'moon')
 }
 
 function rowHtml(m) {
@@ -225,25 +285,43 @@ function emptyState() {
   </div>`
 }
 
+/* ----------------------------------------------------------------- history */
+
+function renderHistory() {
+  const entries = loadHistory()
+  el.history.innerHTML = `<div class="history-head">
+      <div>
+        <div class="ht">Email History</div>
+        <div class="hs">${entries.length} of ${MAX_HISTORY} saved</div>
+      </div>
+      ${entries.length ? '<button class="history-clear" data-clear>Clear all</button>' : ''}
+    </div>
+    ${entries.length ? entries.map(histRow).join('') : `<div class="empty">
+      <div class="empty-badge">${icon('history')}</div>
+      <b>No history yet</b>
+      <p>Addresses you use will appear here.</p>
+    </div>`}`
+}
+
+function histRow(e) {
+  const n = e.messageCount ?? 0
+  return `<button class="hist-row" data-use="${esc(e.email)}">
+    <span class="hist-main">
+      <span class="hist-addr">${esc(e.email)}</span>
+      <span class="hist-when">${esc(stamp(e.usedAt))}</span>
+    </span>
+    <span class="hist-count${n ? '' : ' zero'}">${n ? icon('mail') : ''}${n}</span>
+  </button>`
+}
+
 /* ----------------------------------------------------------- message view */
 
-function renderMessage() {
-  if (selectedId === null) {
-    el.msg.hidden = true
-    el.list.hidden = false
-    el.msg.innerHTML = ''
-    return
-  }
-  el.list.hidden = true
-  el.msg.hidden = false
-
+function paintMessage() {
   const m = fullMsg
   const meta = messages.find((x) => x.id === selectedId)
   const subject = esc(m?.subject || meta?.subject || '(no subject)')
   const from = esc(m?.from || meta?.from || '')
-  const when = new Date(m?.receivedAt || meta?.receivedAt || Date.now()).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  })
+  const when = esc(stamp(m?.receivedAt || meta?.receivedAt || Date.now()))
 
   if (!m) {
     el.msg.innerHTML = `<div class="msg-head"><div class="msg-headline">
@@ -261,15 +339,15 @@ function renderMessage() {
         <div class="title"><p class="subject">${subject}</p><p class="from">${from}</p></div>
         <button class="icon-btn" data-del="${esc(selectedId)}" title="Delete message">${icon('trash')}</button>
       </div>
-      ${canSwitch ? `<div class="tabs">
-        <button class="tab on" data-view="html">HTML</button>
-        <button class="tab" data-view="text">Plain text</button>
-        <span class="when">${esc(when)}</span>
-      </div>` : `<div class="tabs"><span class="when">${esc(when)}</span></div>`}
+      <div class="tabs">
+        ${canSwitch ? `<button class="tab on" data-view="html">HTML</button>
+        <button class="tab" data-view="text">Plain text</button>` : ''}
+        <span class="when">${when}</span>
+      </div>
     </div>
     <div class="msg-body" id="body"></div>`
 
-  paintBody(m, m.html ? 'html' : 'text')
+  paintBody(m, canSwitch ? 'html' : 'text')
   el.msg.querySelectorAll('.tab').forEach((t) =>
     t.addEventListener('click', () => {
       el.msg.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t))
@@ -283,7 +361,7 @@ function paintBody(m, view) {
   if (view === 'html' && m.html) {
     const frame = document.createElement('iframe')
     // allow-same-origin so we can rewrite every link; scripts stay off (sandbox + extension CSP),
-    // and clicks are forwarded to a real tab, which is what a side panel cannot do itself.
+    // and clicks are forwarded to a real tab, which a side panel cannot open by itself.
     frame.setAttribute('sandbox', 'allow-same-origin')
     frame.setAttribute('referrerpolicy', 'no-referrer')
     frame.title = 'Email body'
@@ -326,31 +404,29 @@ async function openMessage(id) {
   selectedId = id
   readIds.add(id)
   messages = messages.map((m) => (m.id === id ? { ...m, read: true } : m))
-  render()
   fullMsg = cache.get(id) ?? null
-  renderMessage()
+  render()
   if (fullMsg) return
   const meta = messages.find((m) => m.id === id)
   const full = meta ? await fetchFull(meta) : null
   if (selectedId !== id) return          // user moved on while we loaded
   fullMsg = full
-  renderMessage()
+  render()
 }
 
 function closeMessage() {
   selectedId = null
   fullMsg = null
-  renderMessage()
   render()
 }
 
 async function removeMessage(id) {
-  const row = el.list.querySelector(`[data-open="${CSS.escape(id)}"]`)
-  row?.classList.add('removing')
+  el.list.querySelector(`[data-open="${CSS.escape(id)}"]`)?.classList.add('removing')
   messages = messages.filter((m) => m.id !== id)
   cache.delete(id)
   delete bodyCodes[id]
-  if (selectedId === id) closeMessage()
+  if (selectedId === id) { selectedId = null; fullMsg = null }
+  updateMessageCount(email, messages.length)
   render()
   try { await fetch(`${inboxUrl()}/${encodeURIComponent(id)}`, { method: 'DELETE' }) }
   catch { toast('Could not delete') }
@@ -367,6 +443,7 @@ function flashPill() {
 function setEmail(next) {
   email = next
   save(EMAIL_KEY, next)
+  saveToHistory(next)
   messages = []
   selectedId = null
   fullMsg = null
@@ -374,7 +451,8 @@ function setEmail(next) {
   readIds.clear()
   for (const k of Object.keys(bodyCodes)) delete bodyCodes[k]
   closeEditor()
-  renderMessage()
+  closeMenu()
+  panel = 'inbox'
   render()
   flashPill()
   loadInbox()
@@ -417,6 +495,29 @@ async function copyAddress() {
   } catch { toast('Copy failed') }
 }
 
+/* -------------------------------------------------------------- dock menus */
+
+function closeMenu() { el.menu.hidden = true }
+
+function toggleMenu() {
+  if (!el.menu.hidden) { closeMenu(); syncDock(); return }
+  closeEditor()
+  el.menu.innerHTML = `<div class="menu-title">New random inbox on…</div>` +
+    OWN_DOMAINS.map((d) => `<button class="menu-item${d === currentDomain() ? ' current' : ''}" data-domain="${d}">
+      ${icon('shuffle')}<span class="d">@${d}</span></button>`).join('')
+  el.menu.hidden = false
+  syncDock()
+}
+
+function setPanel(next) {
+  if (panel === next && next === 'inbox' && selectedId === null) return
+  panel = next
+  if (next === 'history') { selectedId = null; fullMsg = null }
+  closeMenu()
+  closeEditor()
+  render()
+}
+
 let toastTimer
 function toast(text) {
   el.toast.textContent = text
@@ -426,9 +527,6 @@ function toast(text) {
 }
 
 /* ------------------------------------------------------------------ events */
-
-el.theme.addEventListener('click', () =>
-  applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'))
 
 el.openTab.addEventListener('click', () => chrome.tabs.create({ url: `${BASE}/#/inbox` }))
 
@@ -453,6 +551,34 @@ el.refresh.addEventListener('click', async () => {
     el.refresh.classList.remove('spin')
     refreshing = false
   }
+})
+
+el.dock.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-dock]')
+  if (!btn) return
+  switch (btn.dataset.dock) {
+    case 'inbox':   setPanel('inbox'); break
+    case 'history': setPanel('history'); break
+    case 'new':     toggleMenu(); break
+    case 'docs':    chrome.tabs.create({ url: `${BASE}/#/docs` }); break
+    case 'theme':   applyTheme(isDark() ? 'light' : 'dark'); break
+  }
+})
+
+el.menu.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-domain]')
+  if (!item) return
+  closeMenu()
+  newAddress(item.dataset.domain)
+  syncDock()
+})
+
+// clicking anywhere else closes the domain menu
+document.addEventListener('click', (e) => {
+  if (el.menu.hidden) return
+  if (e.target.closest('#domain-menu') || e.target.closest('[data-dock="new"]')) return
+  closeMenu()
+  syncDock()
 })
 
 el.list.addEventListener('click', (e) => {
@@ -485,18 +611,30 @@ el.msg.addEventListener('click', (e) => {
   if (link) { e.preventDefault(); openExternal(link.href) }
 })
 
-// New address when the panel is reopened in a fresh session is handled by the stored email.
+el.history.addEventListener('click', (e) => {
+  if (e.target.closest('[data-clear]')) {
+    save(HISTORY_KEY, '[]')
+    renderHistory()
+    return
+  }
+  const row = e.target.closest('[data-use]')
+  if (row) { setEmail(row.dataset.use) }
+})
 
 /* -------------------------------------------------------------------- init */
 
-el.theme.innerHTML = icon('moon')
+el.openTab.innerHTML = icon('external')
 el.newAddr.innerHTML = icon('shuffle')
 el.copy.innerHTML = icon('copy')
 el.refresh.innerHTML = icon('refresh')
-el.openTab.innerHTML = icon('external')
 el.editSave.innerHTML = icon('check')
+el.dock.querySelector('[data-dock="inbox"]').innerHTML = icon('inbox')
+el.dock.querySelector('[data-dock="history"]').innerHTML = icon('history')
+el.dock.querySelector('[data-dock="new"]').innerHTML = icon('plus')
+el.dock.querySelector('[data-dock="docs"]').innerHTML = icon('book')
 
 applyTheme(load(THEME_KEY, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+saveToHistory(email)
 render()
 loadInbox()
 startStream()
