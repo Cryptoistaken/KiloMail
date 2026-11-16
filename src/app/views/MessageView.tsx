@@ -7,6 +7,8 @@ import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/app/components/ConfirmDialog'
 import { addressOnly, senderAddress, senderDisplayName, senderLabel, senderFull } from '@/lib/sender'
+import { agoLabel } from '@/lib/ago'
+import { useNow } from '@/hooks/useNow'
 import type { MessageFull } from '@/lib/types'
 
 interface MessageViewProps {
@@ -31,16 +33,6 @@ function addTargetBlank(html: string): string {
 }
 
 /** "3 minutes ago" - the relative half of "9:30 PM (3 minutes ago)". */
-function agoLabel(when: number): string {
-  const mins = Math.round((Date.now() - when) / 60_000)
-  if (!Number.isFinite(mins)) return ''
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`
-  const hours = Math.round(mins / 60)
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
-  const days = Math.round(hours / 24)
-  return `${days} day${days === 1 ? '' : 's'} ago`
-}
 
 /** The sender's own Date header when there is a usable one, otherwise when it arrived. */
 function sentAt(message: MessageFull): number {
@@ -142,6 +134,10 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
     }
   }, [message?.html, message?.id, view])
 
+  // A mail younger than a minute is counted out loud, second by second. This has to sit with the
+  // other hooks, above the early returns.
+  const now = useNow(!!message?.arrivedMs && Date.now() - message.arrivedMs < 60_000)
+
   if (loading) return (
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="flex items-center gap-2">
@@ -174,6 +170,8 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
   const name = senderDisplayName(message)
   const fromAddress = senderAddress(message.from)
   const sent = sentAt(message)
+  /** The anchored arrival is what the ticking label counts from; the header is the fallback. */
+  const arrived = message.arrivedMs ?? sent
 
   // Always "to me": the mail is sitting in the inbox you are reading, and the true To header is
   // in the details rows. A mail client says "to me" for exactly the same reason.
@@ -254,7 +252,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
               </p>
               <p className="shrink-0 text-[11px] text-muted-foreground">
                 {clockTime(sent)}
-                <span className="hidden sm:inline"> ({agoLabel(sent)})</span>
+                <span className="hidden sm:inline"> ({agoLabel(arrived, now, 'long')})</span>
               </p>
             </div>
 

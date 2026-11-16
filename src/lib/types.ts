@@ -8,6 +8,9 @@ export interface MessageMeta {
   receivedAt: string
   read: boolean
   timeAgo: string
+  /** When the mail landed, in this browser's clock, stamped once when the payload arrived.
+   *  See arrivalOf in lib/ago.ts for why the raw timestamp cannot be trusted on its own. */
+  arrivedMs?: number
 }
 
 export interface MessageFull extends MessageMeta {

@@ -36,6 +36,7 @@ import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 import { extractCode, subjectCode } from '@/lib/codes'
 import { extractActionLink } from '@/lib/links'
+import { arrivalOf } from '@/lib/ago'
 import { playChime, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
 
 // "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
@@ -191,7 +192,10 @@ export default function App() {
     try {
       const provider = getProvider(addr)
       const full = await provider.fetchMessage(addr, meta)
-      if (full) msgCache.current.set(meta.id, full)
+      if (full) {
+        full.arrivedMs = meta.arrivedMs ?? arrivalOf(meta)
+        msgCache.current.set(meta.id, full)
+      }
       return full
     } catch { return null }
   }, [])
@@ -263,7 +267,7 @@ export default function App() {
       const stop = provider.streamInbox(
         addr,
         (msgs) => {
-          const mapped = msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read }))
+          const mapped = msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read, arrivedMs: arrivalOf(m) }))
           // Chime only for genuinely new mail - never on the first payload after connecting
           // (that is the inbox we already have) and never on a manual refresh.
           const fresh = mapped.some(m => !seenIds.current.has(m.id))
@@ -288,7 +292,7 @@ export default function App() {
       const provider = getProvider(addr)
       const msgs = await provider.fetchInbox(addr)
       // Opened mails stay opened across reloads - the API always says unread.
-      setMessages(msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read })))
+      setMessages(msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read, arrivedMs: arrivalOf(m) })))
       prefetchBodyCodes(addr, msgs)
     } catch (e) {
       console.error('loadInbox failed', e)

@@ -6,6 +6,8 @@ import { MessageSkeleton } from '@/app/components/MessageSkeleton'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { senderFull, senderSecondary } from '@/lib/sender'
 import { subjectCode } from '@/lib/codes'
+import { agoLabel } from '@/lib/ago'
+import { useNow } from '@/hooks/useNow'
 import type { MessageMeta } from '@/lib/types'
 
 interface InboxViewProps {
@@ -32,6 +34,15 @@ export function InboxView({
 }: InboxViewProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
+
+  // Mail younger than a minute is counted out loud, second by second.
+  const fresh = messages.some(m => Date.now() - (m.arrivedMs ?? Date.now()) < 60_000)
+  const now = useNow(fresh)
+
+  /** The API's own "5m ago" is the fallback when a provider gave us nothing to anchor to. */
+  function arrival(msg: MessageMeta): string {
+    return msg.arrivedMs === undefined ? msg.timeAgo : agoLabel(msg.arrivedMs, now)
+  }
 
   function getCode(msg: MessageMeta): string | null {
     return subjectCode(msg.subject) ?? bodyCodes[msg.id] ?? null
@@ -142,7 +153,7 @@ export function InboxView({
                           {senderFull(msg)}
                         </span>
                       </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">{msg.timeAgo}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{arrival(msg)}</span>
                     </div>
                     <p className="truncate text-xs text-muted-foreground">{msg.subject || '(no subject)'}</p>
                   </div>
