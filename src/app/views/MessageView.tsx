@@ -246,11 +246,11 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
               </button>
 
               {showDetails && (
-                <div className="absolute top-full left-0 z-30 mt-2 grid w-[312px] max-w-[calc(100vw-2.5rem)] grid-cols-[74px_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-background p-3 shadow-2xl">
+                <div className="absolute top-full left-0 z-30 mt-2 grid w-max max-w-[min(26rem,calc(100vw-5rem))] grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg border border-border bg-background p-3 shadow-2xl">
                   {details.map(([k, v]) => (
                     <div key={k} className="contents">
                       <span className="text-right text-[11px] text-muted-foreground">{k}</span>
-                      <span className="break-words font-mono text-[11px] leading-relaxed">{v}</span>
+                      <span className="min-w-0 break-words font-mono text-[11px] leading-relaxed">{v}</span>
                     </div>
                   ))}
                 </div>
