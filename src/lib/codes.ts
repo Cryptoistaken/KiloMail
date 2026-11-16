@@ -51,6 +51,17 @@ function pick(s: string): string | null {
   )
 }
 
+/**
+ * Senders also put the code BEFORE the keyword ("Your login request to TypeSafe 052196 is your
+ * one-time code"), which the forward window cannot see. Looking backwards freely would turn a ZIP
+ * in a footer ("our office at 94111 ... code") into a code again, so the only words allowed
+ * between the token and the keyword are the little ones that build that sentence.
+ */
+const LINK =
+  '(?:[\\s-]+(?:is|was|are|were|as|the|your|my|our|a|an|this|that|it|one|time|login|sign[\\s-]?in|verification|security|confirmation|access|sms))*'
+const BEFORE = () =>
+  new RegExp(`\\b([A-Za-z0-9]{4,10})\\b${LINK}[\\s-]+(?:code|otp|pin|passcode|token)\\b`, 'gi')
+
 /** Search the whole mail - plain text first, then the HTML - so codes further down are found. */
 export function extractCode(text?: string, html?: string): string | null {
   const hay = scrub([(text || '').trim(), stripHtml(html || '')].filter(Boolean).join('\n'))
@@ -60,6 +71,10 @@ export function extractCode(text?: string, html?: string): string | null {
   for (const w of hay.matchAll(near)) {
     const c = pick(w[0])
     if (c) return c
+  }
+
+  for (const w of hay.matchAll(BEFORE())) {
+    if (/\d/.test(w[1]) || /^[A-Z]{4,10}$/.test(w[1])) return w[1]
   }
 
   // A body that is nothing but the code ("482913", "KQZX") is common, so accept it - but only

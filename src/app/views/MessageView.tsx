@@ -234,15 +234,16 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
               </p>
             </div>
 
-            <span ref={detailsRef} className="relative -ml-1 mt-0.5 inline-block">
+            <span ref={detailsRef} className="relative -ml-1 mt-0.5 inline-flex items-center gap-1">
+              <span className="text-[11px] text-muted-foreground">to me</span>
               <button
                 onClick={() => setShowDetails(v => !v)}
                 aria-expanded={showDetails}
+                aria-label="Message details"
                 title={showDetails ? 'Hide details' : 'Show details'}
-                className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="grid h-4 w-4 shrink-0 place-items-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                to me
-                <ChevronDown className={cn('h-3 w-3 transition-transform', showDetails && 'rotate-180')} />
+                <ChevronDown className="h-3 w-3" />
               </button>
 
               {showDetails && (
