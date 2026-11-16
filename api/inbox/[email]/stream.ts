@@ -28,6 +28,7 @@ export default async function handler(req: Request): Promise<Response> {
   const encoder = new TextEncoder();
   let lastHash = "";
   let closed = false;
+  let beat: ReturnType<typeof setInterval> | null = null;
 
   const stream = new ReadableStream({
     async start(controller: ReadableStreamDefaultController) {
@@ -41,6 +42,14 @@ export default async function handler(req: Request): Promise<Response> {
       try { controller.enqueue(encoder.encode("retry: 1000\n\n")); } catch {}
 
       send({ type: "connected" });
+
+      // Keep-alive. Nothing is written between mails, and an idle stream is closed upstream
+      // after roughly two minutes (measured: 128s), which is what made the connection look
+      // like it kept dropping. A comment line every 15s costs nothing and holds it open.
+      beat = setInterval(() => {
+        if (closed) return;
+        try { controller.enqueue(encoder.encode(": ping\n\n")); } catch {}
+      }, 15_000);
 
       const iv = setInterval(async () => {
         if (closed) { clearInterval(iv); return; }
@@ -72,10 +81,14 @@ export default async function handler(req: Request): Promise<Response> {
       setTimeout(() => {
         closed = true;
         clearInterval(iv);
+        if (beat) clearInterval(beat);
         try { controller.close(); } catch {}
       }, MAX_DURATION);
     },
-    cancel() { closed = true; },
+    cancel() {
+      closed = true;
+      if (beat) clearInterval(beat);
+    },
   });
 
   return new Response(stream, {

@@ -49,3 +49,14 @@ export function senderSecondary(msg: Who): string | null {
   const from = senderAddress(msg.from)
   return senderLabel(msg) === from ? null : from
 }
+
+/**
+ * `TypeSafe <login@typesafe.ai>` - the name plus the address, the way a mail client writes it.
+ * Only when the sender actually set a name: for a machine address there is nothing friendly to
+ * wrap, so this falls back to the plain label rather than pairing a domain with a token.
+ */
+export function senderFull(msg: Who): string {
+  const from = senderAddress(msg.from)
+  const name = (msg.fromName || embeddedName(msg.from) || '').trim()
+  return name && from ? `${name} <${from}>` : senderLabel(msg)
+}

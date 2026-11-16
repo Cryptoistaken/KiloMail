@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
-import { senderLabel } from '@/lib/sender'
+import { senderFull } from '@/lib/sender'
 import type { MessageFull } from '@/lib/types'
 
 interface MessageViewProps {
@@ -87,7 +87,7 @@ export function MessageView({ message, loading, onClose, onDelete }: MessageView
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{message.subject || '(no subject)'}</p>
               <p className="truncate text-xs text-muted-foreground" title={message.from}>
-                {senderLabel(message)}
+                {senderFull(message)}
               </p>
             </div>
           </div>
