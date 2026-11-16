@@ -27,7 +27,7 @@ import { Logo }        from '@/app/components/Logo'
 
 import {
   persistInbox, markVisited,
-  getPersistedEmail,
+  getPersistedEmail, loadReadIds, saveReadIds,
   type Panel, type MessageMeta, type MessageFull,
 } from '@/lib/types'
 import { saveToHistory, updateMessageCount } from '@/lib/history'
@@ -157,7 +157,7 @@ export default function App() {
   const [sound,        setSound]        = useState(soundOn)
 
   const msgCache   = useRef<Map<string, MessageFull>>(new Map())
-  const readIds    = useRef<Set<string>>(new Set())
+  const readIds    = useState(() => new Set(loadReadIds(email)))[0]
   const stopStream = useRef<(() => void) | null>(null)
   const newMenuRef = useRef<HTMLDivElement>(null)
   // New-mail chime bookkeeping: the first stream payload after connecting is the existing
@@ -222,7 +222,9 @@ export default function App() {
   const resetInbox = (next: string) => {
     persistInbox(next)
     setEmail(next); setMessages([]); setSelectedId(null)
-    setFullMsg(null); readIds.current.clear()
+    setFullMsg(null)
+    // Each inbox keeps its own opened-mail list.
+    readIds.clear(); loadReadIds(next).forEach(id => readIds.add(id))
     msgCache.current.clear(); setBodyCodes({}); setBodyLinks({})
     chimeArmed.current = false; seenIds.current = new Set()
     // Kill the previous inbox's stream right now. Waiting for the effect cleanup leaves a
@@ -261,7 +263,7 @@ export default function App() {
       const stop = provider.streamInbox(
         addr,
         (msgs) => {
-          const mapped = msgs.map(m => ({ ...m, read: readIds.current.has(m.id) || m.read }))
+          const mapped = msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read }))
           // Chime only for genuinely new mail - never on the first payload after connecting
           // (that is the inbox we already have) and never on a manual refresh.
           const fresh = mapped.some(m => !seenIds.current.has(m.id))
@@ -285,7 +287,8 @@ export default function App() {
     try {
       const provider = getProvider(addr)
       const msgs = await provider.fetchInbox(addr)
-      setMessages(msgs)
+      // Opened mails stay opened across reloads - the API always says unread.
+      setMessages(msgs.map(m => ({ ...m, read: readIds.has(m.id) || m.read })))
       prefetchBodyCodes(addr, msgs)
     } catch (e) {
       console.error('loadInbox failed', e)
@@ -335,7 +338,7 @@ export default function App() {
   }, [route, email, loadInbox, startStream])
 
   const selectMessage = async (id: string) => {
-    setSelectedId(id); readIds.current.add(id)
+    setSelectedId(id); readIds.add(id); saveReadIds(email, [...readIds])
     setMessages(m => m.map(msg => msg.id === id ? { ...msg, read: true } : msg))
     if (msgCache.current.has(id)) {
       setFullMsg(msgCache.current.get(id)!); setMsgLoading(false); return
@@ -532,10 +535,9 @@ export default function App() {
           )}>
             <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}>
               <InboxView email={email} messages={messages} loading={loading} connected={connected}
-                selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
+                selected={selectedId} onSelect={selectMessage}
                 onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes} bodyLinks={bodyLinks}
                 sound={sound} onToggleSound={() => setSound(s => { const next = !s; setSoundOn(next); return next })}
-                canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
               />
             </Suspense>
           </aside>

@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Check, Link2, Volume2, VolumeX } from 'lucide-react'
+import { WifiOff, Wifi, Inbox, RefreshCw, Copy, Check, Link2, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageSkeleton } from '@/app/components/MessageSkeleton'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
-import { ConfirmDialog } from '@/app/components/ConfirmDialog'
-import { senderFull, senderLabel, senderSecondary } from '@/lib/sender'
+import { senderFull, senderSecondary } from '@/lib/sender'
 import { subjectCode } from '@/lib/codes'
 import type { MessageMeta } from '@/lib/types'
 
@@ -16,13 +15,11 @@ interface InboxViewProps {
   connected: boolean
   selected: string | null
   onSelect: (id: string) => void
-  onDelete: (id: string) => Promise<void>
   onRefresh: () => void
   refreshing: boolean
   bodyCodes: Record<string, string>
   /** The one link a verification mail exists for, when it carries no code. */
   bodyLinks: Record<string, string>
-  canDelete: boolean
   /** New-mail sound: on by default, toggled from the list header. */
   sound: boolean
   onToggleSound: () => void
@@ -30,11 +27,9 @@ interface InboxViewProps {
 
 export function InboxView({
   email, messages, loading, connected,
-  selected, onSelect, onDelete, onRefresh, refreshing, bodyCodes, bodyLinks, canDelete,
+  selected, onSelect, onRefresh, refreshing, bodyCodes, bodyLinks,
   sound, onToggleSound,
 }: InboxViewProps) {
-  const [deleteState, setDeleteState] = useState<Record<string, 'deleting' | 'deleted'>>({})
-  const [confirmMsg, setConfirmMsg] = useState<MessageMeta | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
 
@@ -47,10 +42,9 @@ export function InboxView({
     return getCode(msg) ? null : (bodyLinks[msg.id] ?? null)
   }
 
-  /** The URL as it can be shown in a chip: no scheme, cut off by the button's own width. */
-  function shortLink(msg: MessageMeta): string {
-    return (getLink(msg) ?? '').replace(/^https?:\/\//i, '')
-  }
+  /** Chip text: at most ten characters, so no address or code can stretch the row. */
+  const shortLink = (msg: MessageMeta) => (getLink(msg) ?? '').replace(/^https?:\/\//i, '').slice(0, 10)
+  const shortCode = (msg: MessageMeta) => (getCode(msg) ?? '').slice(0, 10)
 
   const handleCopy = async (e: React.MouseEvent, msg: MessageMeta) => {
     e.stopPropagation()
@@ -68,17 +62,6 @@ export function InboxView({
     await navigator.clipboard.writeText(link)
     setCopiedLinkId(msg.id)
     setTimeout(() => setCopiedLinkId(null), 2000)
-  }
-
-  const handleDelete = async (id: string) => {
-    setDeleteState(s => ({ ...s, [id]: 'deleting' }))
-    try {
-      await onDelete(id)
-      setDeleteState(s => ({ ...s, [id]: 'deleted' }))
-      setTimeout(() => setDeleteState(s => { const n = { ...s }; delete n[id]; return n }), 800)
-    } catch {
-      setDeleteState(s => { const n = { ...s }; delete n[id]; return n })
-    }
   }
 
   return (
@@ -132,20 +115,17 @@ export function InboxView({
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-border">
-            {messages.map(msg => {
-              const ds = deleteState[msg.id]
-              return (
+            {messages.map(msg => (
                 <div
                   key={msg.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => !ds && onSelect(msg.id)}
-                  onKeyDown={e => !ds && e.key === 'Enter' && onSelect(msg.id)}
+                  onClick={() => onSelect(msg.id)}
+                  onKeyDown={e => e.key === 'Enter' && onSelect(msg.id)}
                   className={cn(
-                    'group flex w-full items-start gap-3 px-4 py-3 cursor-pointer transition-colors',
-                    ds === 'deleted' ? 'bg-emerald-500/10' : 'hover:bg-muted/60',
-                    selected === msg.id && !ds && 'bg-muted',
-                    !msg.read && !ds && 'bg-primary/5'
+                    'flex w-full items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/60',
+                    selected === msg.id && 'bg-muted',
+                    !msg.read && 'bg-primary/5'
                   )}
                 >
                   <SenderAvatar from={msg.from} fromName={msg.fromName} className="mt-0.5 h-8 w-8 text-xs" />
@@ -179,7 +159,7 @@ export function InboxView({
                     >
                       {copiedId === msg.id
                         ? <><Check className="h-3 w-3" /> Copied</>
-                        : <><Copy className="h-3 w-3" /> {getCode(msg)}</>
+                        : <><Copy className="h-3 w-3" /> {shortCode(msg)}</>
                       }
                     </button>
                   )}
@@ -188,53 +168,23 @@ export function InboxView({
                       onClick={e => handleCopyLink(e, msg)}
                       title={`Copy link ${getLink(msg)}`}
                       className={cn(
-                        'flex min-w-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
+                        'shrink-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
                         copiedLinkId === msg.id
                           ? 'bg-muted text-muted-foreground'
                           : 'bg-primary/10 text-primary hover:bg-primary/20'
                       )}
                     >
                       {copiedLinkId === msg.id
-                        ? <><Check className="h-3 w-3 shrink-0" /> Copied</>
-                        : <><Link2 className="h-3 w-3 shrink-0" /> <span className="min-w-0 max-w-[9rem] truncate">{shortLink(msg)}</span></>
+                        ? <><Check className="h-3 w-3" /> Copied</>
+                        : <><Link2 className="h-3 w-3" /> {shortLink(msg)}</>
                       }
                     </button>
                   )}
-                  {canDelete && (
-                    <button
-                      onClick={e => { e.stopPropagation(); setConfirmMsg(msg) }}
-                      disabled={!!ds}
-                      className={cn(
-                        'ml-1 shrink-0 p-0.5 rounded transition-all',
-                        !ds && 'opacity-0 group-hover:opacity-100',
-                        ds === 'deleted' && 'opacity-100 text-emerald-500'
-                      )}
-                    >
-                      {ds === 'deleting' ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                      ) : ds === 'deleted' ? (
-                        <CheckCheck className="h-3.5 w-3.5 text-emerald-500" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      )}
-                    </button>
-                  )}
                 </div>
-              )
-            })}
+            ))}
           </div>
         )}
       </div>
-
-      {confirmMsg && (
-        <ConfirmDialog
-          title="Delete this message?"
-          body={`"${confirmMsg.subject || '(no subject)'}" from ${senderLabel(confirmMsg)} is removed for good.`}
-          confirmLabel="Delete"
-          onConfirm={() => { const id = confirmMsg.id; setConfirmMsg(null); void handleDelete(id) }}
-          onClose={() => setConfirmMsg(null)}
-        />
-      )}
     </div>
   )
 }
