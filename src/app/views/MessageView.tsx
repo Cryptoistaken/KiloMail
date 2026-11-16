@@ -125,11 +125,8 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
   const fromAddress = senderAddress(message.from)
   const sent = sentAt(message)
 
-  // "to me" when the mail was addressed to the inbox being read, like a mail client shows it.
-  const toAddress = message.to ? addressOnly(message.to) : ''
-  const recipient = !toAddress
-    ? inboxEmail
-    : toAddress.toLowerCase() === inboxEmail.toLowerCase() ? 'me' : toAddress
+  // Always "to me": the mail is sitting in the inbox you are reading, and the true To header is
+  // in the details rows. A mail client says "to me" for exactly the same reason.
 
   const dateValue = message.date && Number.isNaN(Date.parse(message.date))
     ? message.date
@@ -196,7 +193,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
                 title={showDetails ? 'Hide details' : 'Show details'}
                 className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                to {recipient}
+                to me
                 <ChevronDown className={cn('h-3 w-3 transition-transform', showDetails && 'rotate-180')} />
               </button>
 
