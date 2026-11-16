@@ -8,7 +8,8 @@ import { loadHistory, updateMessageCount, clearHistory, MAX_HISTORY, type Histor
 import type { MessageMeta } from '@/lib/types'
 
 interface HistoryViewProps {
-  onSwitch: (email: string) => void
+  /** Switch to an address; pass a message id to open that exact mail once the inbox loads. */
+  onSwitch: (email: string, openId?: string) => void
   onClear: () => void
 }
 
@@ -157,7 +158,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
                   {msgs.map(m => (
                     <button
                       key={m.id}
-                      onClick={() => onSwitch(entry.email)}
+                      onClick={() => onSwitch(entry.email, m.id)}
                       className="flex w-full items-start gap-2.5 bg-muted/20 py-2 pl-6 pr-4 text-left transition-colors hover:bg-muted/50"
                     >
                       <SenderAvatar from={m.from} fromName={m.fromName} className="mt-0.5 h-5 w-5 text-[9px]" />

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Check } from 'lucide-react'
+import { Trash2, WifiOff, Wifi, Inbox, RefreshCw, Loader2, CheckCheck, Copy, Check, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageSkeleton } from '@/app/components/MessageSkeleton'
@@ -20,11 +20,15 @@ interface InboxViewProps {
   refreshing: boolean
   bodyCodes: Record<string, string>
   canDelete: boolean
+  /** New-mail sound: on by default, toggled from the list header. */
+  sound: boolean
+  onToggleSound: () => void
 }
 
 export function InboxView({
   email, messages, loading, connected,
   selected, onSelect, onDelete, onRefresh, refreshing, bodyCodes, canDelete,
+  sound, onToggleSound,
 }: InboxViewProps) {
   const [deleteState, setDeleteState] = useState<Record<string, 'deleting' | 'deleted'>>({})
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -68,6 +72,17 @@ export function InboxView({
             {connected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             <span>{connected ? 'live' : 'reconnecting…'}</span>
           </div>
+          <Button
+            variant="ghost" size="icon" className="h-7 w-7"
+            onClick={onToggleSound}
+            aria-pressed={sound}
+            aria-label={sound ? 'Mute new-mail sound' : 'Unmute new-mail sound'}
+            title={sound ? 'Sound on — click to mute' : 'Sound off — click to unmute'}
+          >
+            {sound
+              ? <Volume2 className="h-3.5 w-3.5" />
+              : <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />}
+          </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={loading || refreshing} aria-label="Refresh inbox">
             <RefreshCw className={cn('h-3.5 w-3.5', (loading || refreshing) && 'animate-spin')} />
           </Button>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
-import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X, Volume2, VolumeX } from 'lucide-react'
+import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
@@ -155,14 +155,18 @@ export default function App() {
   const chimeArmed = useRef(false)
   const seenIds    = useRef<Set<string>>(new Set())
   const soundRef   = useRef(sound)
+  // A message id to open as soon as its inbox finishes loading (clicked from history search).
+  const pendingOpen = useRef<string | null>(null)
   useEffect(() => { soundRef.current = sound }, [sound])
 
-  // Browsers keep audio silent until the page has been clicked, so open the audio context
-  // on the first real gesture.
+  // Browsers keep audio silent until the page has been interacted with, so open the audio
+  // context on the first interaction of any kind. Without this the chime gets scheduled on a
+  // context that stays 'suspended' and is never actually heard.
   useEffect(() => {
     const unlock = () => unlockAudio()
-    window.addEventListener('pointerdown', unlock, { once: true })
-    return () => window.removeEventListener('pointerdown', unlock)
+    const events = ['pointerdown', 'mousedown', 'keydown', 'touchstart', 'click'] as const
+    events.forEach(e => window.addEventListener(e, unlock, { once: true }))
+    return () => events.forEach(e => window.removeEventListener(e, unlock))
   }, [])
 
   const autoCopy = useCallback((addr: string) => {
@@ -204,6 +208,11 @@ export default function App() {
     setFullMsg(null); readIds.current.clear()
     msgCache.current.clear(); setBodyCodes({})
     chimeArmed.current = false; seenIds.current = new Set()
+    // Kill the previous inbox's stream right now. Waiting for the effect cleanup leaves a
+    // window where a late update from the old address lands under the new one, which looks
+    // exactly like "it did not refresh".
+    stopStream.current?.(); stopStream.current = null
+    setConnected(false); setLoading(true)
     autoCopy(next)
   }
 
@@ -215,6 +224,15 @@ export default function App() {
     document.addEventListener('mousedown', handler, true)
     return () => document.removeEventListener('mousedown', handler, true)
   }, [newMenuOpen])
+
+  // The stream runs ~9 minutes, then the browser reconnects within about a second. A short drop
+  // like that should not flash "reconnecting…" at the user, so only give up after a few seconds.
+  const statusTimer = useRef<number | null>(null)
+  const setLiveStatus = useCallback((ok: boolean) => {
+    if (statusTimer.current !== null) { clearTimeout(statusTimer.current); statusTimer.current = null }
+    if (ok) { setConnected(true); return }
+    statusTimer.current = window.setTimeout(() => { statusTimer.current = null; setConnected(false) }, 4000)
+  }, [])
 
   const startStream = useCallback((addr: string) => {
     stopStream.current?.()
@@ -237,13 +255,13 @@ export default function App() {
           updateMessageCount(addr, mapped.length)
           prefetchRef.current(addr, mapped)
         },
-        (status) => setConnected(status),
+        setLiveStatus,
       )
       stopStream.current = stop
     } catch (e) {
       console.error('No provider for', addr, e)
     }
-  }, [])
+  }, [setLiveStatus])
 
   const loadInbox = useCallback(async (addr: string) => {
     setLoading(true)
@@ -272,19 +290,16 @@ export default function App() {
     loadInbox(email)
     startStream(email)
     // Sleep while the tab is hidden: drop the stream, reconnect on return
+    // The stream stays open while the tab is hidden - that is exactly when a new-mail chime
+    // matters. Coming back re-fetches, in case anything was missed while away.
     const onVisibility = () => {
-      if (document.hidden) {
-        stopStream.current?.(); stopStream.current = null
-        setConnected(false)
-      } else {
-        loadInbox(email)
-        startStream(email)
-      }
+      if (!document.hidden) loadInbox(email)
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       stopStream.current?.(); stopStream.current = null
+      if (statusTimer.current !== null) { clearTimeout(statusTimer.current); statusTimer.current = null }
     }
   }, [route, email, loadInbox, startStream])
 
@@ -301,6 +316,14 @@ export default function App() {
       setFullMsg(full)
     } finally { setMsgLoading(false) }
   }
+
+  // A history search result was clicked: once that inbox has loaded, open the exact message.
+  useEffect(() => {
+    const id = pendingOpen.current
+    if (!id || !messages.some(m => m.id === id)) return
+    pendingOpen.current = null
+    void selectMessage(id)
+  }, [messages]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteMessage = async (id: string) => {
     try {
@@ -322,7 +345,14 @@ export default function App() {
       resetInbox(randomInbox(d))
     }
   }
-  const switchToEmail = (addr: string) => { resetInbox(addr); setPanel('inbox') }
+  // Switching address always reloads that inbox (the route + email effect fetches it, and
+  // resetInbox drops the old stream), and a click from a history search also opens the exact
+  // message that matched.
+  const switchToEmail = (addr: string, openId?: string) => {
+    resetInbox(addr)
+    pendingOpen.current = openId ?? null
+    setPanel('inbox')
+  }
 
   // One click = a fresh address on the domain we are already on (history is saved by the inbox effect).
   // No spinning icon here — the address itself animates in, which is the real feedback.
@@ -473,6 +503,7 @@ export default function App() {
               <InboxView email={email} messages={messages} loading={loading} connected={connected}
                 selected={selectedId} onSelect={selectMessage} onDelete={deleteMessage}
                 onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes}
+                sound={sound} onToggleSound={() => setSound(s => { const next = !s; setSoundOn(next); return next })}
                 canDelete={!!ALL_PROVIDERS.find(p => p.domains.some(d => email.endsWith(`@${d}`)))?.deleteMessage}
               />
             </Suspense>
@@ -582,18 +613,6 @@ export default function App() {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">New address · @{currentDomain}</TooltipContent>
-              </Tooltip>
-            </DockIcon>
-
-            <DockIcon onClick={() => setSound(s => { const next = !s; setSoundOn(next); return next })}>
-              <Tooltip>
-                <TooltipTrigger aria-label={sound ? 'Mute new-mail sound' : 'Unmute new-mail sound'}>
-                  <div className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-10 rounded-full',
-                    !sound && 'text-muted-foreground')}>
-                    {sound ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">{sound ? 'Sound on' : 'Sound off'}</TooltipContent>
               </Tooltip>
             </DockIcon>
 

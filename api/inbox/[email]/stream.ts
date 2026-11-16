@@ -7,7 +7,10 @@ const redis = new Redis({
 
 const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id", "kilomail.tech"];
 const CHECK_INTERVAL = 2000;
-const MAX_DURATION = 295_000;
+/** How long one connection stays open before the server ends it. The browser then reconnects
+ *  on its own (see the `retry` hint below), so nothing is missed - but a longer window means
+ *  fewer reconnects and a steadier "live" indicator. 9 minutes, inside the 5-10 minute range. */
+const MAX_DURATION = 540_000;
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
@@ -32,6 +35,10 @@ export default async function handler(req: Request): Promise<Response> {
         if (closed) return;
         try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`)); } catch {}
       };
+
+      // Ask the browser to come straight back when this connection ends, instead of its
+      // default multi-second wait - that is what made the connection look like it dropped.
+      try { controller.enqueue(encoder.encode("retry: 1000\n\n")); } catch {}
 
       send({ type: "connected" });
 
