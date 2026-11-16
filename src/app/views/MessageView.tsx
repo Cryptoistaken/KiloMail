@@ -85,10 +85,36 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
       doc.open()
       doc.write(`<!doctype html><html><head><style>
         html,body{margin:0;padding:12px 16px;font-family:sans-serif;font-size:14px;
-          background:#fff;color:#111;word-break:break-word;line-height:1.6}
-        a{color:#2563eb}img{max-width:100%}
+          background:#fff;color:#111;word-break:break-word;line-height:1.6;overflow-x:hidden}
+        a{color:#2563eb}
+        img{max-width:100%!important;height:auto!important}
+        table{max-width:100%!important}
+        table[width],td[width]{width:auto!important}
       </style></head><body>${addTargetBlank(message.html)}</body></html>`)
       doc.close()
+
+      // Fit to width, the way a mail client handles a fixed-width mail: constrain the tables and
+      // images above, and if a wide design still overflows, scale the whole body down to fit.
+      const inner = doc.defaultView
+      const fit = () => {
+        const root = doc.documentElement
+        const body = doc.body
+        if (!root || !body) return
+        body.style.transform = ''
+        body.style.width = ''
+        const have = root.clientWidth
+        const need = root.scrollWidth
+        if (have > 0 && need > have + 2) {
+          const scale = have / need
+          body.style.transformOrigin = 'top left'
+          body.style.transform = `scale(${scale})`
+          body.style.width = `${100 / scale}%`
+        }
+      }
+      fit()
+      inner?.addEventListener('load', fit)
+      const late = setTimeout(fit, 300) // images can land after load and change the width
+      return () => { clearTimeout(late); inner?.removeEventListener('load', fit) }
     }
   }, [message?.html, message?.id, view])
 
@@ -159,6 +185,28 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
             <p className="truncate text-base font-medium">{message.subject || '(no subject)'}</p>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
+            {message.html && message.text && (
+              <div className="mr-1 flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                <button
+                  onClick={() => setView('html')}
+                  aria-label="HTML view" title="HTML"
+                  aria-pressed={view === 'html'}
+                  className={cn('grid h-6 w-6 place-items-center rounded',
+                    view === 'html' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
+                >
+                  <Code2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setView('text')}
+                  aria-label="Plain text view" title="Plain text"
+                  aria-pressed={view === 'text'}
+                  className={cn('grid h-6 w-6 place-items-center rounded',
+                    view === 'text' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
+                >
+                  <AlignLeft className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={onDelete} aria-label="Delete message">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -211,29 +259,8 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
           </div>
         </div>
 
-        {message.html && message.text && (
-          <div className="mt-2.5 flex items-center gap-1">
-            <button
-              onClick={() => setView('html')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
-                view === 'html'
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <Code2 className="h-3 w-3" /> HTML
-            </button>
-            <button
-              onClick={() => setView('text')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ${
-                view === 'text'
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <AlignLeft className="h-3 w-3" /> Plain text
-            </button>
-          </div>
+        {message.html && message.text && view === 'text' && (
+          <p className="mt-2 text-[11px] text-muted-foreground">Showing the plain-text version</p>
         )}
       </div>
       <div className="flex-1 overflow-auto">
