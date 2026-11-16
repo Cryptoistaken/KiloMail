@@ -7,13 +7,27 @@
  * "code" can never become a copy chip.
  */
 
-const KEYWORD = /(?:verification|confirmation|security|one[-\s]?time|login|access|sms)?[\s-]*(?:code|otp|pin|passcode|token)\b/i
+const KEYWORD = /(?:\b(?:verification|confirmation|security|one[-\s]?time|login|access|sms)[\s-]*)?\b(?:code|otp|pin|passcode|token)\b/i
 
 // Words that sit next to the keyword but are never the code.
 const STOP = new Set([
   'code', 'otp', 'pin', 'token', 'your', 'you', 'the', 'this', 'that', 'only', 'please',
   'enter', 'below', 'above', 'sent', 'send', 'expires', 'expire', 'valid', 'here', 'use',
 ])
+
+/**
+ * Links and UUIDs are packed with things shaped like codes, and the word "token" INSIDE a URL
+ * (`...?public_token=public-token-live-620c0996-4644-...`) used to act as the anchor - that is
+ * exactly how a magic-link mail ended up offering a chunk of its own tracking token. Both are
+ * removed before the search; a real code is never inside a link.
+ */
+const NOISE = [
+  /https?:\/\/\S+/gi,
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+]
+function scrub(s: string): string {
+  return NOISE.reduce((t, re) => t.replace(re, ' '), s)
+}
 
 function stripHtml(html: string): string {
   return html
@@ -39,7 +53,7 @@ function pick(s: string): string | null {
 
 /** Search the whole mail - plain text first, then the HTML - so codes further down are found. */
 export function extractCode(text?: string, html?: string): string | null {
-  const hay = [(text || '').trim(), stripHtml(html || '')].filter(Boolean).join('\n')
+  const hay = scrub([(text || '').trim(), stripHtml(html || '')].filter(Boolean).join('\n'))
   if (!hay) return null
 
   const near = new RegExp(KEYWORD.source + '[\\s\\S]{0,40}', 'gi')
@@ -62,7 +76,7 @@ export function extractCode(text?: string, html?: string): string | null {
 
 /** The copy chip shown straight from the list, before any body is fetched. */
 export function subjectCode(subject?: string): string | null {
-  const s = subject || ''
+  const s = scrub(subject || '')
   const near = s.match(new RegExp(KEYWORD.source + '[\\s\\S]{0,40}', 'i'))
   const c = near ? pick(near[0]) : null
   if (c) return c
