@@ -7,6 +7,7 @@ import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { senderFull, senderSecondary } from '@/lib/sender'
 import { subjectCode } from '@/lib/codes'
 import { agoLabel } from '@/lib/ago'
+import { RollingAgo } from '@/app/components/Rolling'
 import { useNow } from '@/hooks/useNow'
 import type { MessageMeta } from '@/lib/types'
 
@@ -153,7 +154,7 @@ export function InboxView({
                           {senderFull(msg)}
                         </span>
                       </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">{arrival(msg)}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground"><RollingAgo text={arrival(msg)} /></span>
                     </div>
                     <p className="truncate text-xs text-muted-foreground">{msg.subject || '(no subject)'}</p>
                   </div>

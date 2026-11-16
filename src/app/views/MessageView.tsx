@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/app/components/ConfirmDialog'
+import { RollingAgo } from '@/app/components/Rolling'
 import { addressOnly, senderAddress, senderDisplayName, senderLabel, senderFull } from '@/lib/sender'
 import { agoLabel } from '@/lib/ago'
 import { useNow } from '@/hooks/useNow'
@@ -252,7 +253,7 @@ export function MessageView({ message, loading, inboxEmail, onClose, onDelete }:
               </p>
               <p className="shrink-0 text-[11px] text-muted-foreground">
                 {clockTime(sent)}
-                <span className="hidden sm:inline"> ({agoLabel(arrived, now, 'long')})</span>
+                <span className="hidden sm:inline"> (<RollingAgo text={agoLabel(arrived, now, 'long')} />)</span>
               </p>
             </div>
 

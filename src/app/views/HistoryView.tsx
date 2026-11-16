@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Mail, RefreshCw, Search, X } from 'lucide-react'
+import { History, RefreshCw, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { ConfirmDialog } from '@/app/components/ConfirmDialog'
@@ -76,6 +76,13 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
 
   const countFor = (email: string) =>
     inboxes[email] ? inboxes[email].length : (entries.find(e => e.email === email)?.messageCount ?? 0)
+
+  /** The senders of an inbox's mail, newest first and deduped - the faces behind the count. */
+  const sendersFor = (addr: string) => {
+    const seen = new Map<string, MessageMeta>()
+    for (const m of inboxes[addr] ?? []) if (!seen.has(m.from)) seen.set(m.from, m)
+    return [...seen.values()].slice(0, 4)
+  }
 
   return (
     <div className="relative flex h-full flex-col">
@@ -192,10 +199,17 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
                   </p>
                 </div>
                 {countFor(entry.email) > 0 ? (
-                  <span className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary transition-colors group-hover:bg-primary/20">
-                    <Mail className="h-2.5 w-2.5" />
-                    {countFor(entry.email)}
-                  </span>
+                  <div className="ml-2 flex shrink-0 items-center gap-2">
+                    <div className="flex items-center -space-x-2">
+                      {sendersFor(entry.email).map(s => (
+                        <SenderAvatar key={s.from} from={s.from} fromName={s.fromName}
+                          className="h-6 w-6 text-[9px] ring-2 ring-background" />
+                      ))}
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary transition-colors group-hover:bg-primary/20">
+                      {countFor(entry.email)}
+                    </span>
+                  </div>
                 ) : (
                   <span className="ml-2 shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                     0

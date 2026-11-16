@@ -37,7 +37,8 @@ import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers
 import { extractCode, subjectCode } from '@/lib/codes'
 import { extractActionLink } from '@/lib/links'
 import { arrivalOf } from '@/lib/ago'
-import { playChime, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
+import { playChime, playTap, soundOn, setSoundOn, unlockAudio } from '@/lib/sound'
+import { installTapFeedback } from '@/lib/haptics'
 
 // "Own" = domains we host ourselves (the kilolabs provider: Cloudflare worker -> Redis).
 // Every other domain belongs to a third-party inbox that the api/providers proxies talk to.
@@ -179,6 +180,10 @@ export default function App() {
     events.forEach(e => window.addEventListener(e, unlock, { once: true }))
     return () => events.forEach(e => window.removeEventListener(e, unlock))
   }, [])
+
+  // Every press answers back: a buzz where the device has one, and the quiet tick while the sound
+  // setting is on. One listener covers the whole app.
+  useEffect(() => installTapFeedback(() => soundRef.current, playTap), [])
 
   const autoCopy = useCallback((addr: string) => {
     navigator.clipboard.writeText(addr).then(() => {
@@ -541,7 +546,13 @@ export default function App() {
               <InboxView email={email} messages={messages} loading={loading} connected={connected}
                 selected={selectedId} onSelect={selectMessage}
                 onRefresh={refreshInbox} refreshing={refreshing} bodyCodes={bodyCodes} bodyLinks={bodyLinks}
-                sound={sound} onToggleSound={() => setSound(s => { const next = !s; setSoundOn(next); return next })}
+                sound={sound} onToggleSound={() => setSound(s => {
+                  const next = !s
+                  setSoundOn(next)
+                  // Turning it on plays the arrival sound once, so you know what to listen for.
+                  if (next) { unlockAudio(); playChime() }
+                  return next
+                })}
               />
             </Suspense>
           </aside>
