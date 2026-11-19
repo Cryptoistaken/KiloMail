@@ -5,13 +5,15 @@ import { useTheme } from '@/hooks/useTheme'
 const HORIZON =
   'linear-gradient(180deg,#0a0a0a 0%,#12101f 22%,#1f1938 38%,#2b185b 52%,#4b2ea8 64%,#6239d0 72%,#2b185b 84%,#0a0a0a 100%)'
 
-const GRID =
-  'linear-gradient(to right,rgba(255,255,255,0.07) 1px,transparent 1px),' +
-  'linear-gradient(to bottom,rgba(255,255,255,0.07) 1px,transparent 1px)'
+/** The light theme's violet, laid over a white page so the app is not just white. */
+const WASH_LIGHT =
+  'linear-gradient(180deg, rgba(107,87,245,0.34) 0%, rgba(107,87,245,0.16) 30%, rgba(107,87,245,0.04) 60%, rgba(255,255,255,0) 100%)'
 
 export function Background() {
   const theme = useTheme()
   const is3d = theme === '3d'
+  const is3l = theme === '3l'
+  const is3 = is3d || is3l
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
@@ -24,29 +26,31 @@ export function Background() {
             className="absolute inset-x-0 top-0 h-[440px]"
             style={{ backgroundImage: 'radial-gradient(70% 100% at 50% 0%, rgba(107,87,245,0.35) 0%, rgba(107,87,245,0) 70%)' }}
           />
-          {/* Engineering grid, faded at the edges */}
-          <div
-            className="absolute inset-0 opacity-70"
-            style={{
-              backgroundImage: GRID,
-              backgroundSize: '72px 72px',
-              maskImage: 'radial-gradient(90% 70% at 50% 58%, #000 20%, transparent 78%)',
-              WebkitMaskImage: 'radial-gradient(90% 70% at 50% 58%, #000 20%, transparent 78%)',
-            }}
-          />
           {/* Scrims: keeps the nav and dock readable over the glow */}
           <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-background via-background/70 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </>
       )}
-      <FlickeringGrid
-        className="h-full w-full"
-        squareSize={5}
-        gridGap={4}
-        color={is3d ? 'rgb(200, 190, 255)' : theme === 'dark' ? 'rgb(180, 180, 210)' : 'rgb(60, 60, 90)'}
-        maxOpacity={is3d ? 0.12 : theme === 'dark' ? 0.18 : 0.13}
-        flickerChance={0.03}
-      />
+      {is3l && (
+        <>
+          {/* Violet wash from the top, so the inbox reads as the same product */}
+          <div className="absolute inset-0" style={{ backgroundImage: WASH_LIGHT }} />
+          <div
+            className="absolute inset-x-0 bottom-0 h-[60%]"
+            style={{ backgroundImage: 'radial-gradient(70% 100% at 50% 100%, rgba(107,87,245,0.16) 0%, rgba(107,87,245,0) 70%)' }}
+          />
+        </>
+      )}
+      {!is3 && (
+        <FlickeringGrid
+          className="h-full w-full"
+          squareSize={5}
+          gridGap={4}
+          color={theme === 'dark' ? 'rgb(180, 180, 210)' : 'rgb(60, 60, 90)'}
+          maxOpacity={theme === 'dark' ? 0.18 : 0.13}
+          flickerChance={0.03}
+        />
+      )}
     </div>
   )
 }

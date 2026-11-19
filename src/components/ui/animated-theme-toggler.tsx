@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Layers, Moon, Sun } from "lucide-react"
+import { Boxes, Layers, Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
 import { cn } from "@/lib/utils"
 import type { Theme } from "@/hooks/useTheme"
@@ -11,11 +11,12 @@ interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"butt
   asDiv?: boolean
 }
 
-const NEXT: Record<Theme, Theme> = { light: "dark", dark: "3d", "3d": "light" }
+const NEXT: Record<Theme, Theme> = { light: "dark", dark: "3d", "3d": "3l", "3l": "light" }
 const LABEL: Record<Theme, string> = {
   light: "Switch to dark theme",
-  dark: "Switch to 3D theme",
-  "3d": "Switch to light theme",
+  dark: "Switch to 3D dark theme",
+  "3d": "Switch to 3D light theme",
+  "3l": "Switch to light theme",
 }
 
 export const AnimatedThemeToggler = ({
@@ -26,11 +27,14 @@ export const AnimatedThemeToggler = ({
 }: AnimatedThemeTogglerProps) => {
   const [theme, setTheme] = useState<Theme>("light")
   const elRef = useRef<HTMLButtonElement | HTMLDivElement>(null)
+  // One transition at a time: stacking them (mashing the button) makes the renderer
+  // snapshot the whole page again and again, which can take the tab down.
+  const busy = useRef(false)
 
   useEffect(() => {
     const update = () => {
       const c = document.documentElement.classList
-      setTheme(c.contains("theme3d") ? "3d" : c.contains("dark") ? "dark" : "light")
+      setTheme(c.contains("theme3l") ? "3l" : c.contains("theme3d") ? "3d" : c.contains("dark") ? "dark" : "light")
     }
     update()
     const obs = new MutationObserver(update)
@@ -40,7 +44,9 @@ export const AnimatedThemeToggler = ({
 
   const toggleTheme = useCallback(() => {
     const el = elRef.current
-    if (!el) return
+    if (!el || busy.current) return
+    busy.current = true
+    const release = () => { busy.current = false }
 
     const { top, left, width, height } = el.getBoundingClientRect()
     const x = left + width / 2
@@ -53,18 +59,22 @@ export const AnimatedThemeToggler = ({
       const next = NEXT[theme]
       setTheme(next)
       const root = document.documentElement
-      // 3D rides on top of dark so every `dark:` utility still applies.
-      root.classList.toggle("dark", next !== "light")
+      // 3D dark rides on top of dark so every `dark:` utility still applies; 3D light is a
+      // light palette of its own and must not inherit the dark ones.
+      root.classList.toggle("dark", next === "dark" || next === "3d")
       root.classList.toggle("theme3d", next === "3d")
+      root.classList.toggle("theme3l", next === "3l")
       localStorage.setItem("theme", next)
     }
 
     if (typeof document.startViewTransition !== "function") {
       applyTheme()
+      release()
       return
     }
 
     const transition = document.startViewTransition(() => { flushSync(applyTheme) })
+    transition.finished.then(release, release)
     transition?.ready?.then(() => {
       document.documentElement.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`] },
@@ -77,7 +87,8 @@ export const AnimatedThemeToggler = ({
     <>
       {theme === "light" && <Moon className="h-[18px] w-[18px] shrink-0" />}
       {theme === "dark" && <Layers className="h-[18px] w-[18px] shrink-0" />}
-      {theme === "3d" && <Sun className="h-[18px] w-[18px] shrink-0" />}
+      {theme === "3d" && <Boxes className="h-[18px] w-[18px] shrink-0" />}
+      {theme === "3l" && <Sun className="h-[18px] w-[18px] shrink-0" />}
       <span className="sr-only">{LABEL[theme]}</span>
     </>
   )

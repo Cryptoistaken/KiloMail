@@ -125,6 +125,86 @@
     color: #fff;
 }
 
+/* ── 3D light theme ──────────────────────────────────────────────────────────
+   Revyl's real page: white, near-black ink, violet ink for accents, hairline
+   borders (#e5e5e5) and the same extruded violet buttons on a white shell. */
+.theme3l {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --card: #ffffff;
+    --card-foreground: #0a0a0a;
+    --popover: #ffffff;
+    --popover-foreground: #0a0a0a;
+    --primary: #6b57f5;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f5f5;
+    --secondary-foreground: #171717;
+    --muted: #f5f5f5;
+    --muted-foreground: #6f6f78;
+    --accent: #f1eefd;
+    --accent-foreground: #2b185b;
+    --destructive: #dc2626;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #6b57f5;
+    --chart-1: #9c8ded;
+    --chart-2: #7a5be2;
+    --chart-3: #6239d0;
+    --chart-4: #6b57f5;
+    --chart-5: #2b185b;
+    --sidebar: #fafafa;
+    --sidebar-foreground: #0a0a0a;
+    --sidebar-primary: #6b57f5;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f1eefd;
+    --sidebar-accent-foreground: #2b185b;
+    --sidebar-border: #e5e5e5;
+    --sidebar-ring: #6b57f5;
+    --radius: 0.5rem;
+}
+
+.theme3l ::selection {
+    background: #d4d0f7;
+    color: #171717;
+}
+
+/* Revyl's hero ramp: near-black, violet, and back out to white where the product sits. */
+.revyl-ramp {
+    background-image: linear-gradient(180deg,
+        #171717 0%, #191823 11%, #1f1938 22%, #2b185b 33%, #442894 43%,
+        #6239d0 53%, #7a5be2 62%, #9c8ded 71%, #d4d0f7 82%, #f7f7f7 92%, #ffffff 100%);
+}
+
+/* Content sitting on the dark top of that ramp has to be white, utilities or not. */
+.theme3l .on-ramp {
+    color: #fafafa;
+}
+
+.theme3l .on-ramp :is(.text-muted-foreground, .text-muted-foreground\/80, .text-muted-foreground\/70, .text-muted-foreground\/60) {
+    color: rgb(255 255 255 / 88%);
+}
+
+.theme3l .on-ramp :is(.text-foreground, .text-foreground\/80) {
+    color: #fafafa;
+}
+
+.theme3l .on-ramp h1 span {
+    background-image: none;
+    -webkit-text-fill-color: #fafafa;
+    color: #fafafa;
+}
+
+/* Controls keep their own colours: the white toggle is not hero text. */
+.theme3l .on-ramp .surface3d,
+.theme3l .on-ramp .surface3d:hover {
+    color: #0a0a0a;
+}
+
+/* The mark sits on the dark top of the ramp, so it turns white there. */
+.theme3l .on-ramp .text-black {
+    color: #fafafa;
+}
+
 @theme inline {
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -209,9 +289,10 @@
    border-border, shadow-lg) without touching every component. */
 
 /* Primary action: the Revyl button — violet gradient, top light bevel, and a
-   solid darker edge underneath so it reads as a physical key. */
-.theme3d [data-variant="default"],
-.theme3d .bg-primary {
+   solid darker edge underneath so it reads as a physical key. Same key on both
+   3D themes: it is the violet against white that Revyl uses in its own shell. */
+:is(.theme3d, .theme3l) [data-slot="button"][data-variant="default"],
+:is(.theme3d, .theme3l) .bg-primary {
     background-color: #5a45f5;
     background-image: linear-gradient(180deg, #6b57f5 0%, #553ef4 100%);
     color: #fff;
@@ -224,15 +305,15 @@
     transition: filter 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
-.theme3d [data-variant="default"]:hover,
-.theme3d .bg-primary:hover {
+:is(.theme3d, .theme3l) [data-slot="button"][data-variant="default"]:hover,
+:is(.theme3d, .theme3l) .bg-primary:hover {
     background-color: #5a45f5;
     background-image: linear-gradient(180deg, #7a68ff 0%, #5f4bf7 100%);
     filter: brightness(1.06);
 }
 
-.theme3d [data-variant="default"]:active,
-.theme3d .bg-primary:active {
+:is(.theme3d, .theme3l) [data-slot="button"][data-variant="default"]:active,
+:is(.theme3d, .theme3l) .bg-primary:active {
     transform: translateY(1px);
     box-shadow:
         inset 0 2px 0 0 rgb(255 255 255 / 18%),
@@ -240,8 +321,8 @@
         0 2px 6px -2px rgb(75 46 168 / 50%);
 }
 
-/* Secondary action: a raised dark slab instead of a flat outline. */
-.theme3d [data-variant="outline"] {
+/* Secondary action, dark: a raised dark slab instead of a flat outline. */
+.theme3d [data-slot="button"][data-variant="outline"] {
     background-image: linear-gradient(180deg, rgb(255 255 255 / 10%) 0%, rgb(255 255 255 / 3%) 100%);
     border-color: rgb(255 255 255 / 14%);
     color: #fafafa;
@@ -250,18 +331,41 @@
         0 1px 2px rgb(0 0 0 / 50%);
 }
 
-.theme3d [data-variant="outline"]:hover {
+.theme3d [data-slot="button"][data-variant="outline"]:hover {
     background-image: linear-gradient(180deg, rgb(255 255 255 / 16%) 0%, rgb(255 255 255 / 7%) 100%);
     border-color: rgb(255 255 255 / 22%);
     color: #fafafa;
 }
 
-.theme3d [data-variant="outline"]:active {
+.theme3d [data-slot="button"][data-variant="outline"]:active {
     transform: translateY(1px);
     box-shadow: inset 0 1px 2px rgb(0 0 0 / 40%);
 }
 
-/* Raised card / panel: hairline border, top light catch, deep violet shadow. */
+/* Secondary action, light: Revyl's white button — hairline, faint lift. */
+.theme3l [data-slot="button"][data-variant="outline"] {
+    background-color: #fff;
+    background-image: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    border-color: #e5e5e5;
+    color: #171717;
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 6%),
+        0 4px 10px -6px rgb(0 0 0 / 18%);
+}
+
+.theme3l [data-slot="button"][data-variant="outline"]:hover {
+    background-color: #fafafa;
+    background-image: none;
+    border-color: #d4d4d4;
+    color: #0a0a0a;
+}
+
+.theme3l [data-slot="button"][data-variant="outline"]:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+/* Raised card / panel, dark: hairline border, top light catch, deep violet shadow. */
 .theme3d .surface3d,
 .theme3d .panel3d {
     background-color: rgb(23 21 32 / 78%);
@@ -272,12 +376,30 @@
         0 16px 24px -12px rgb(6 4 24 / 90%);
 }
 
+/* Raised card / panel, light: white on white, carried by the hairline and shadow. */
+.theme3l .surface3d,
+.theme3l .panel3d {
+    background-color: rgb(255 255 255 / 80%);
+    border: 1px solid #e6e2f7;
+    backdrop-filter: blur(14px);
+    box-shadow:
+        0 1px 2px rgb(23 23 23 / 4%),
+        0 18px 32px -20px rgb(43 24 91 / 28%);
+}
+
 /* Icon chips inside cards: a small raised tile. */
 .theme3d .icon3d {
     background-image: linear-gradient(180deg, rgb(255 255 255 / 10%) 0%, rgb(255 255 255 / 2%) 100%);
     border-color: rgb(255 255 255 / 14%);
     color: #c9bffb;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 2px 4px -1px rgb(0 0 0 / 60%);
+}
+
+.theme3l .icon3d {
+    background-image: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+    border-color: #e5e5e5;
+    color: #6b57f5;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
 }
 
 .theme3d .surface3d:hover {
@@ -287,6 +409,13 @@
         inset 0 1px 0 rgb(255 255 255 / 10%),
         0 18px 30px -12px rgb(6 4 24 / 95%),
         0 0 0 1px rgb(122 91 226 / 18%);
+}
+
+.theme3l .surface3d:hover {
+    border-color: rgb(107 87 245 / 35%);
+    box-shadow:
+        0 2px 4px rgb(0 0 0 / 4%),
+        0 16px 32px -18px rgb(43 24 91 / 30%);
 }
 
 /* The product preview sits in a violet hairline frame, like Revyl's hero screenshot. */
@@ -299,6 +428,15 @@
         0 0 0 1px rgb(255 255 255 / 4%);
 }
 
+.theme3l .frame3d {
+    padding: 1px;
+    border-radius: 18px;
+    background-image: linear-gradient(180deg, rgb(107 87 245 / 55%) 0%, rgb(212 208 247 / 90%) 45%, rgb(229 229 229 / 100%) 100%);
+    box-shadow:
+        0 24px 48px -24px rgb(23 23 23 / 35%),
+        0 2px 8px rgb(23 23 23 / 6%);
+}
+
 .theme3d .window3d {
     border-radius: 17px;
     border-color: transparent;
@@ -306,8 +444,15 @@
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
 }
 
+.theme3l .window3d {
+    border-radius: 17px;
+    border-color: transparent;
+    background-color: #fff;
+    box-shadow: none;
+}
+
 /* Revyl's call to action: a white shell holding the violet key. */
-.theme3d .cta3d {
+:is(.theme3d, .theme3l) .cta3d {
     padding: 4px;
     border-radius: 0.75rem;
     background: #fff;
@@ -317,12 +462,20 @@
         0 6px 16px rgb(0 0 0 / 20%);
 }
 
-.theme3d .cta3d > [data-slot="button"] {
+.theme3l .cta3d {
+    border: 1px solid #e5e5e5;
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 6%),
+        0 10px 24px -12px rgb(107 87 245 / 35%);
+}
+
+:is(.theme3d, .theme3l) .cta3d > [data-slot="button"] {
     border-radius: 0.375rem;
     box-shadow:
         inset 0 2px 0 0 rgb(255 255 255 / 32%),
         0 1px 2px rgb(67 48 219 / 40%);
 }
+
 
 /* Text that should glow like Revyl's lavender highlight. */
 .theme3d .text-glow3d {

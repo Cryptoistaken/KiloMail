@@ -1,6 +1,5 @@
-import { Zap, Shield, Clock, Globe as GlobeIcon, RefreshCw, Sparkles, ArrowRight, Check, BookOpen, Github } from 'lucide-react'
+import { Zap, Shield, Clock, Globe as GlobeIcon, RefreshCw, Sparkles, ArrowRight, BookOpen, Github } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Meteors } from '@/components/ui/meteors'
 import { DottedMap } from '@/components/ui/dotted-map'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -23,8 +22,6 @@ const FEATURES = [
   { icon: <Sparkles className="h-4 w-4" />,  title: 'Open source',       desc: 'MIT licensed. Self-host on Vercel + Upstash in minutes.' },
 ]
 
-const TRUST = [`${OWN_DOMAINS.length} own domains`, 'Cloudflare MX', 'Upstash Redis', 'Vercel Edge']
-
 /** A still of the real inbox, so the hero shows the product instead of describing it. */
 const PREVIEW = [
   { from: 'GitHub', subject: 'Verify your device', snippet: 'Use this code to finish signing in.', code: '481-920', time: '2s' },
@@ -37,14 +34,19 @@ interface LandingProps { onLaunch: () => void }
 export function Landing({ onLaunch }: LandingProps) {
   const theme = useTheme()
   const is3d = theme === '3d'
+  const is3l = theme === '3l'
+  const is3 = is3d || is3l
 
   return (
     <TooltipProvider>
       <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
         <Background />
-        {/* Meteors and the dotted map are the flat themes' atmosphere; over the 3D horizon
-            they read as scratches, so the grid does that job instead. */}
-        {!is3d && (
+        {/* The light 3D theme is Revyl's page proper: the violet ramp sits behind the hero
+            and fades out to white where the product starts. */}
+        {is3l && <div className="revyl-ramp pointer-events-none absolute inset-x-0 top-0 z-[1] h-[1150px]" />}
+        {/* Meteors and the dotted map are the flat themes' atmosphere; over the 3D ground
+            they read as scratches, so neither 3D theme carries them. */}
+        {!is3 && (
           <>
             <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
               <Meteors number={14} />
@@ -57,9 +59,11 @@ export function Landing({ onLaunch }: LandingProps) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center overflow-hidden" style={{ height: '40vh' }}>
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-40 bg-gradient-to-b from-background to-transparent" />
+        {!is3l && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-40 bg-gradient-to-b from-background to-transparent" />
+        )}
         <div className="relative z-[4] flex flex-1 flex-col">
-          <header className="flex items-center justify-between px-6 pt-5">
+          <header className={`flex items-center justify-between px-6 pt-5 ${is3l ? 'on-ramp' : ''}`}>
             <div className="flex items-center gap-2">
               <Logo variant="icon" className="h-7 w-7 sm:hidden" />
               <Logo variant="logo" className="hidden sm:inline-flex" />
@@ -73,29 +77,20 @@ export function Landing({ onLaunch }: LandingProps) {
             </nav>
           </header>
           <main>
-            <div className="flex flex-col items-center px-4 pt-16 pb-10 text-center">
-              <Badge variant="outline" className="mb-8 gap-1.5 border-border/60 px-3 py-1 text-xs tracking-wide">
-                <Zap className="h-3 w-3 text-primary" />
-                Real-time · SSE · Cloudflare Edge
-              </Badge>
-              <h1 className="max-w-3xl text-[clamp(2.8rem,6vw,4.5rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
+            <div className={`flex flex-col items-center px-4 pt-20 pb-10 text-center ${is3l ? 'on-ramp' : ''}`}>
+              <h1 className="max-w-3xl text-[clamp(2.8rem,6vw,4.5rem)] font-semibold leading-[1.05] tracking-[-0.04em]">
                 <span className="bg-gradient-to-br from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent">
-                  Disposable email
+                  Disposable inboxes
                 </span>
-                <span className="text-foreground">,</span>
                 <br />
                 <span className="bg-gradient-to-r from-primary via-foreground/80 to-muted-foreground bg-clip-text text-transparent">
-                  done right.
+                  for every signup
                 </span>
               </h1>
-              <p className="mt-6 max-w-[480px] text-[1.05rem] leading-relaxed text-muted-foreground">
-                KiloMail gives you a live inbox at{' '}
-                {OWN_DOMAINS.map(d => (
-                  <code key={d} className="mr-1 rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
-                    @{d}
-                  </code>
-                ))}
-                . No sign-up. No tracking. Just mail.
+              <p className="mt-6 max-w-[560px] text-[1.05rem] leading-relaxed text-muted-foreground">
+                A real inbox on four domains we own, ready before you finish typing.
+                Codes are pulled out the moment mail lands, and every address is
+                thrown away when you are done with it.
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
                 <div className="cta3d">
@@ -107,10 +102,14 @@ export function Landing({ onLaunch }: LandingProps) {
                   Generate address
                 </Button>
               </div>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-xs text-muted-foreground/70">
-                {TRUST.map(t => (
-                  <span key={t} className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-emerald-500/80" /> {t}
+              <p className="mt-8 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                Real-time SSE · Cloudflare MX · 30-day retention
+              </p>
+              {/* Revyl puts the logos of who trusts them here; ours are the domains we run. */}
+              <div className="mt-9 flex w-full max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+                {OWN_DOMAINS.map(d => (
+                  <span key={d} className="font-mono text-[15px] tracking-tight text-muted-foreground">
+                    {d}
                   </span>
                 ))}
               </div>

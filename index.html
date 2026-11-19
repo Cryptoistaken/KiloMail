@@ -23,6 +23,8 @@
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           if (saved === "3d") {
             document.documentElement.classList.add("dark", "theme3d");
+          } else if (saved === "3l") {
+            document.documentElement.classList.add("theme3l");
           } else if (saved === "dark" || (!saved && prefersDark)) {
             document.documentElement.classList.add("dark");
           }

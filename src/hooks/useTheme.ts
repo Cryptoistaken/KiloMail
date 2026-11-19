@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 
-export type Theme = 'dark' | 'light' | '3d'
+export type Theme = 'dark' | 'light' | '3d' | '3l'
 
 export function useTheme(): Theme {
   const getTheme = (): Theme => {
     const c = document.documentElement.classList
+    if (c.contains('theme3l')) return '3l'
     if (c.contains('theme3d')) return '3d'
     return c.contains('dark') ? 'dark' : 'light'
   }
