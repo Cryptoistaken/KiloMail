@@ -366,8 +366,7 @@
 }
 
 /* Raised card / panel, dark: hairline border, top light catch, deep violet shadow. */
-.theme3d .surface3d,
-.theme3d .panel3d {
+.theme3d .surface3d {
     background-color: rgb(23 21 32 / 78%);
     border: 1px solid rgb(255 255 255 / 9%);
     backdrop-filter: blur(14px);
@@ -376,15 +375,43 @@
         0 16px 24px -12px rgb(6 4 24 / 90%);
 }
 
-/* Raised card / panel, light: white on white, carried by the hairline and shadow. */
-.theme3l .surface3d,
-.theme3l .panel3d {
-    background-color: rgb(255 255 255 / 80%);
+/* Raised card, light: white on white, carried by the hairline and shadow. */
+.theme3l .surface3d {
+    background-color: rgb(255 255 255 / 88%);
     border: 1px solid #e6e2f7;
     backdrop-filter: blur(14px);
     box-shadow:
         0 1px 2px rgb(23 23 23 / 4%),
         0 18px 32px -20px rgb(43 24 91 / 28%);
+}
+
+/* The app's own panes hold text, so they are solid: a gradient showing through a
+   blurred pane is what made the inbox look smeared instead of crisp. */
+.theme3d .panel3d {
+    background-color: #12111a;
+    border: 1px solid rgb(255 255 255 / 9%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 16px 24px -14px rgb(6 4 24 / 85%);
+}
+
+.theme3l .panel3d {
+    background-color: #ffffff;
+    border: 1px solid #e6e2f7;
+    box-shadow:
+        0 1px 2px rgb(23 23 23 / 4%),
+        0 14px 28px -20px rgb(43 24 91 / 26%);
+}
+
+/* The app's top bar sits on the brightest part of the ground, so it needs to be
+   more opaque than the flat themes' 70% or it looks washed. */
+.theme3d .appheader {
+    background-color: rgb(10 10 10 / 82%);
+}
+
+.theme3l .appheader {
+    background-color: rgb(255 255 255 / 82%);
+    border-bottom-color: rgb(107 87 245 / 14%);
 }
 
 /* Icon chips inside cards: a small raised tile. */

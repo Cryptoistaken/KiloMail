@@ -7,7 +7,7 @@ const HORIZON =
 
 /** The light theme's violet, laid over a white page so the app is not just white. */
 const WASH_LIGHT =
-  'linear-gradient(180deg, rgba(107,87,245,0.34) 0%, rgba(107,87,245,0.16) 30%, rgba(107,87,245,0.04) 60%, rgba(255,255,255,0) 100%)'
+  'linear-gradient(180deg, rgba(107,87,245,0.26) 0%, rgba(107,87,245,0.12) 30%, rgba(107,87,245,0.03) 60%, rgba(255,255,255,0) 100%)'
 
 export function Background() {
   const theme = useTheme()

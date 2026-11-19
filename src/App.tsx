@@ -465,7 +465,7 @@ export default function App() {
       <div className="relative flex h-dvh flex-col bg-background text-foreground overflow-hidden">
         <Background />
 
-        <header className="relative z-10 flex items-center gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md sm:px-5">
+        <header className="appheader relative z-10 flex items-center gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md sm:px-5">
           <button onClick={() => { const site = siteUrl(); if (site) window.location.href = site; else navigate('/') }} className="hidden sm:flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
             <Logo variant="icon" className="h-7 w-7" />
             <span className="hidden sm:block text-sm font-semibold tracking-tight">KiloMail</span>
