@@ -4,6 +4,9 @@ Disposable email web app. Multiple domains, SSE streaming, OTP code detection.
 
 Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · Upstash Redis · Cloudflare Email Workers
 
+**Working on this repo? Read [`AGENTS.md`](AGENTS.md) first** — it has the deploy command, the API
+table, and the rules for the code/link detectors.
+
 ---
 
 ## Features
@@ -13,6 +16,11 @@ Stack: React 19 · Vite · Tailwind v4 · shadcn/ui · Vercel Edge Functions · 
   covers digits (`482913`), letters+digits (`A1B2C3`) and CAPITAL letters only (`KQZX`). Each shape is
   anchored to a code-ish word, so a ZIP code in a mailing address or a CSS hex colour is never offered.
   Logic lives in `src/lib/codes.ts`; bodies are fetched in the background to find codes that only appear there.
+- **Verification links** (`src/lib/links.ts`) are scored, not picked: the path has to say
+  verify/confirm/magic/token or the button has to say "Verify email". Homepages, privacy policies and
+  tracking pixels are never offered. Both detectors are measured against ~10k real mails — see `test/`.
+- **Agent API.** `POST /api/inbox` mints an address, `GET /api/inbox/:email/code` returns the newest
+  code (or link) in one call. The landing page's *Copy prompt* hands that workflow to a coding agent.
 - **Sender identity.** The worker stores the header `From` address plus its display name as `fromName`,
   not Cloudflare's envelope sender (which for bulk mail is a machine token such as
   `010001a1dc...-000000@envelope.sup.kernel.sh`). The list shows the display name when there is one and falls
@@ -78,6 +86,17 @@ wrangler deploy
 2. Add the environment variables `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `WEBHOOK_SECRET` and `NODE_VERSION=22`
 3. `nodejs_compat` is enabled so the `api/` handlers can read `process.env`
 4. `functions/api/[[path]].ts` routes `/api/*` to those handlers
+
+**A push does not always deploy.** If the live bundle (`assets/index-*.js`) does not change after a
+push, ship it yourself and check the hash again:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name kilomail --branch main --commit-dirty=true
+```
+
+`app.kilomail.tech` (the inbox host) is not created yet — add it as a custom domain on the same
+Pages project. Until it exists the landing page falls back to the apex, so nothing breaks.
 
 **Vercel** (backup — serves `kilomail.vercel.app`):
 

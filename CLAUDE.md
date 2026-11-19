@@ -10,7 +10,8 @@ Personal project — full rewrites are fine, no public users to protect.
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, TypeScript, Vite, Tailwind v4 |
-| Routing | Hash router (`#/inbox`, `#/`) — `src/hooks/useHashRoute.ts` |
+| Routing | Real paths (`/inbox`, `/docs`, `/<email>`) — `src/hooks/useRoute.ts`, host-aware |
+| Hosts | `kilomail.tech` = landing + docs, `app.kilomail.tech` = inbox (`src/lib/host.ts`) |
 | Styling | Tailwind v4 + shadcn/ui components in `src/components/ui/` |
 | API | `api/` — plain `Request → Response` handlers, served by Vercel edge functions **and** Cloudflare Pages (`functions/api/[[path]].ts` router) |
 | Storage | Upstash Redis — hash per inbox, body blobs keyed separately |
@@ -26,13 +27,16 @@ src/
   App.tsx                        main app shell, all state lives here
   lib/
     types.ts                     MessageMeta, MessageFull, Panel, shared constants
-    history.ts                   localStorage inbox history
-    router.ts                    re-exports useHashRoute + navigate
+    history.ts                   localStorage inbox history (MAX_HISTORY = 500)
+    codes.ts                     OTP detection — measured against test/data, see test/README.md
+    links.ts                     verification-link detection — same rules
+    host.ts                      siteMode() / appUrl() / resolveAppBase(): apex vs app. subdomain
+    prompt.ts                    the "Copy prompt" agent setup prompt on the landing page
     utils.ts                     cn() only
     names.ts                     shared name arrays + generateUsername() — used by all providers
   hooks/
-    useHashRoute.ts              hash router hook + navigate()
-    useTheme.ts                  watches <html class="dark"> mutations
+    useRoute.ts                  real-path router hook + navigate()
+    useTheme.ts                  watches the <html> classes: light | dark | 3d | 3l
   providers/
     types.ts                     ProviderPlugin interface — do not change without updating all providers
     registry.ts                  auto-discovery via import.meta.glob — NEVER EDIT
@@ -56,8 +60,10 @@ src/
 
 api/
   inbox/
-    [email].ts                   GET inbox list from Redis (own domains only)
+    index.ts                     POST — mint a random address + its URLs
+    [email].ts                   GET inbox list · DELETE whole inbox (own domains only)
     [email]/
+      code.ts                    GET — newest code or verification link in one call
       stream                     SSE stream (own domains only)
       [id].ts                    GET + DELETE single message (own domains only)
   providers/
@@ -134,12 +140,21 @@ Drop them, redeploy. That's it.
 
 ### Deploying
 
-Two independent targets, both auto-build on push to `main`:
+Cloudflare Pages `kilomail` is the one that serves `kilomail.tech` (site + `/api` through
+`functions/`). Vercel is a backup target for the same code.
 
-| Target | Serves | How |
-|---|---|---|
-| Cloudflare Pages `kilomail` | site + API at **kilomail.tech** | git build (`npm run build` → `dist`) + `functions/`; env vars UPSTASH_*, WEBHOOK_* + `NODE_VERSION=22`; flag `nodejs_compat` (so `process.env` reaches the handlers) |
-| Vercel `kilomail` | site + API at kilomail.vercel.app | git build, `api/` as edge functions |
+**A push is not reliably enough** — the project has been seen serving a build several commits
+old. Deploy and verify:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name kilomail --branch main --commit-dirty=true
+# then compare assets/index-*.js on https://kilomail.tech/ with dist/index.html
+```
+
+Pages project settings: build `npm run build`, output `dist`, env `UPSTASH_*` + `WEBHOOK_SECRET`
++ `NODE_VERSION=22`, flag `nodejs_compat` (so `process.env` reaches the handlers). New `/api`
+routes need both the handler file **and** a line in `functions/api/[[path]].ts`.
 
 The frontend calls `/api/...` relative, so it works on either host with no code change.
 Local API testing on the real runtime: `npm run build && npx wrangler pages dev dist --compatibility-flag=nodejs_compat`
@@ -431,7 +446,8 @@ body:<id>              Redis string — JSON { text, html }  (TTL per message)
 
 - Inbox hash expires 30 days after the last delivery (`EXPIRE` reset on write); each message also carries `expiresAt` and body keys use a 30-day TTL
 - Messages whose `expiresAt` has passed are filtered out on read and pruned from the hash
-- Max 50 messages per inbox — oldest trimmed on write when exceeded
+- Max 500 messages per inbox — oldest trimmed on write when exceeded (`MAX_MESSAGES` in
+  `worker/index.ts`, `api/webhook.ts` and `api/test.ts` — change all three together)
 - Worker and webhook use the same 30-day TTL
 
 ---
@@ -498,9 +514,11 @@ Health job needs secret: `KILOMAIL_BASE_URL` (e.g. `https://kilomail.vercel.app`
 ## Known patterns / gotchas
 
 - `timeAgo` is computed at fetch time and not re-computed on re-render. Stale for long-lived sessions — acceptable for a disposable inbox tool.
-- `extractCode()` in `App.tsx` prefetches OTP codes from message bodies and caches them in `bodyCodes` so the inbox list can show them without opening the message.
-- `Landing.tsx` builds its own-domain chips from `@/providers/registry` (the `kilolabs` provider), so adding an own domain needs no edit there. `src/lib/types.ts` no longer exports a single `DOMAIN`.
+- `extractCode()` / `extractActionLink()` live in `src/lib/codes.ts` and `src/lib/links.ts`. They are tuned against ~10k real mails in `test/data/` — change them with `bun test/verify.ts` open (baseline: 7,804 codes, 0 wrong; 149 links). The `/api/inbox/:email/code` endpoint uses the same two functions, so the UI and the API never disagree.
+- `Landing.tsx` no longer lists domains; the hero is Revyl's shape (headline → sub → white shell with *Open inbox* + *Copy prompt*). `src/lib/prompt.ts` builds the copied prompt from `appBase()`.
+- Themes: `light`, `dark`, `3d` (`.dark` + `.theme3d`), `3l` (`.theme3l`). Token blocks and the unlayered `.surface3d` / `.panel3d` / `.cta3d` / `.revyl-ramp` rules are all in `src/index.css`. App panes stay solid; only the landing cards are glass.
 - `useTheme.ts` lives in `src/hooks/` only. The copy that was in `src/lib/` has been deleted.
+- The dock buttons in `App.tsx` wrap a tooltip trigger `<button>`, so `data-buzz` is read from the nearest `[data-buzz]` ancestor, not from the element under the finger (`src/lib/haptics.ts`).
 - `SettingsView.tsx` has been deleted — it was never wired up. If you want a settings panel, add `"settings"` back to the `Panel` type and render it in `App.tsx`.
 - `hd.provider.ts` polling: the poll loop inlines its own fetch rather than calling `this.fetchInbox` — `this` is not available in an object literal passed to `satisfies`.
 

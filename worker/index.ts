@@ -9,7 +9,7 @@ export interface Env {
 const DEFAULT_DOMAINS = "factoryai.tech";
 
 const TTL = 2592000; // 30 days
-const MAX_MESSAGES = 50;
+const MAX_MESSAGES = 500;
 
 interface MailHeader { key: string; value: string }
 interface MailAddress { name?: string; address?: string }

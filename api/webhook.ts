@@ -7,7 +7,7 @@ const redis = new Redis({
 
 const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id", "kilomail.tech"];
 const TTL = 2592000;
-const MAX_MESSAGES = 50;
+const MAX_MESSAGES = 500;
 
 interface IncomingPayload {
   to: string;
