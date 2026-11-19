@@ -11,3 +11,6 @@ zip.bat
 SKILL.md
 .dev.vars
 
+
+# Playwright MCP scratch output
+.playwright-mcp/
