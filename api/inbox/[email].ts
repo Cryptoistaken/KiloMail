@@ -10,6 +10,7 @@ const DOMAINS = ["factoryai.tech", "kilomail.my.id", "kilosms.web.id", "kilomail
 const CORS = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, DELETE, OPTIONS",
 };
 
 interface MessageMeta {
@@ -24,7 +25,7 @@ interface MessageMeta {
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "GET") return new Response("Method Not Allowed", { status: 405 });
+  if (req.method !== "GET" && req.method !== "DELETE") return new Response("Method Not Allowed", { status: 405 });
 
   const pathParts = new URL(req.url).pathname.split("/").filter(Boolean);
   const email = decodeURIComponent(
@@ -36,6 +37,18 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const inboxKey = `inbox:${email}`;
+
+  // DELETE /api/inbox/:email throws the whole inbox away: the list and every stored body.
+  // An agent that is done with a signup should not leave mail behind for 30 days.
+  if (req.method === "DELETE") {
+    const hashData = await redis.hgetall(inboxKey);
+    const ids = Object.keys((hashData as Record<string, MessageMeta>) ?? {});
+    const pipe = redis.pipeline();
+    ids.forEach((id) => pipe.del(`body:${id}`));
+    pipe.del(inboxKey);
+    await pipe.exec().catch(() => {});
+    return new Response(JSON.stringify({ ok: true, deleted: ids.length }), { headers: CORS });
+  }
   const hashData = await redis.hgetall(inboxKey);
 
   const now = Date.now();

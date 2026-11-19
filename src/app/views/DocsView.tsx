@@ -225,6 +225,16 @@ export function DocsView() {
             Mail sent to any of <code className="rounded border border-border bg-muted px-1 font-mono">{OWN_DOMAINS.join(', ')}</code> is
             stored for 30 days and served by these endpoints. No key, no limit.
           </p>
+          <Endpoint method="POST" path="/api/inbox"
+            desc="Hand out a fresh address. Every name on our domains already works, so this is not a signup — it just returns one random address plus the calls that go with it, which is what an agent should paste into a signup form."
+            params={[
+              { name: 'name', type: 'string', desc: 'Optional local part to claim (3–32 chars, a-z 0-9 . _ -). 409 if that inbox already holds mail.' },
+              { name: 'domain', type: 'string', desc: 'Optional domain from our four' },
+            ]}
+            response={`{\n  "email": "kxmwbqzt41@kilomail.tech",\n  "list": "…/api/inbox/kxmwbqzt41%40kilomail.tech",\n  "code": "…/api/inbox/kxmwbqzt41%40kilomail.tech/code",\n  "stream": "…/stream",\n  "delete": "…"\n}`}
+            errors={[{ status: '409', body: '{ "error": "That name already has mail" }', reason: 'Only when you claim a name with ?name=' }]}
+            curl={`curl -X POST ${BASE}/api/inbox`}
+          />
           <Endpoint method="GET" path="/api/inbox/:email"
             desc="List all messages in an inbox. Returns metadata only — no body content. Returns [] for unknown addresses. Never returns 404."
             params={[{ name: ':email', type: 'string', desc: `URL-encoded address e.g. mybox%40${OWN_DOMAINS[0]}` }]}
@@ -281,6 +291,18 @@ export function DocsView() {
               { status: '400', body: '{ "error": "Invalid request" }', reason: 'Missing or malformed params' },
             ]}
             curl={`curl -X DELETE "${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}/3f2a1b4c-..."`}
+          />
+          <Endpoint method="GET" path="/api/inbox/:email/code"
+            desc="The newest code or verification link, in one call: it lists the inbox, reads the newest few bodies, and returns the first code it finds (or the link when the mail is button-only). Answers found:false instead of 404, so a caller can poll it."
+            params={[{ name: ':email', type: 'string', desc: 'URL-encoded inbox address' }]}
+            response={`{\n  "email": "mybox@kilomail.tech",\n  "found": true,\n  "messages": 1,\n  "code": "482910",\n  "link": null,\n  "id": "3f2a1b4c-...",\n  "from": "no-reply@example.com",\n  "subject": "Your login code",\n  "receivedAt": "2026-03-15T04:58:16.053Z"\n}`}
+            curl={`curl ${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}/code`}
+          />
+          <Endpoint method="DELETE" path="/api/inbox/:email"
+            desc="Throw the whole inbox away: the list and every stored body. Use it when a signup is finished instead of leaving mail behind for 30 days."
+            params={[{ name: ':email', type: 'string', desc: 'URL-encoded inbox address' }]}
+            response={`{ "ok": true, "deleted": 3 }`}
+            curl={`curl -X DELETE "${BASE}/api/inbox/mybox%40${OWN_DOMAINS[0]}"`}
           />
         </Section>
 
@@ -368,10 +390,13 @@ export function DocsView() {
 
         <Section title="Quick reference">
           <CopyBlock code={`# own domains — 30-day storage            -> ${OWN_DOMAINS.join(', ')}
+POST   /api/inbox                → { email, ... }  Mint an address
 GET    /api/inbox/:email         → MessageMeta[]   List inbox
+GET    /api/inbox/:email/code    → code | link     Newest code in one call
 GET    /api/inbox/:email/stream  → SSE stream      Real-time updates
 GET    /api/inbox/:email/:id     → MessageFull     Fetch message body
 DELETE /api/inbox/:email/:id     → { ok: true }    Delete message
+DELETE /api/inbox/:email         → { ok: true }    Wipe the inbox
 
 # third-party inboxes — free, no key, same JSON
 GET    /api/providers/:p?action=inbox&email=:e

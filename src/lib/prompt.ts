@@ -1,27 +1,33 @@
 import { siteMode } from './host'
 
 /**
- * What the "Copy prompt" button hands to an agent: the real endpoints, the real rules,
- * nothing it would have to guess. Built at copy time so the host is always correct.
+ * The setup prompt the landing page copies — the KiloMail version of Revyl's
+ * "Copy setup prompt": paste it into a coding agent and the agent can do the whole
+ * signup loop by itself. Built at copy time so the host is always the real one.
  */
 export function agentPrompt(): string {
   const base = siteMode() === 'site'
     ? `https://app.${window.location.hostname.replace(/^www\./, '')}`
     : window.location.origin
-  const inbox = (name: string) => `${base}/api/inbox/${name}%40kilomail.tech`
 
-  return `You can receive email with KiloMail — a free disposable inbox with a plain HTTP API. No key, no signup, no rate limit.
+  return `Set up KiloMail in this project so you can receive email without an account. No key, no signup, no rate limit.
 
-1. Pick an address: <name>@kilomail.tech — any name works, mail sent there is stored automatically.
-2. List the inbox:
-   curl "${inbox('<name>')}"
-   → [{ id, from, subject, receivedAt, timeAgo }]
-3. Read one message (the code or magic link is in the body):
-   curl "${inbox('<name>')}/<id>"
-   → { text, html, from, subject, receivedAt }
-4. Or wait for mail live (SSE, reconnect when it closes):
-   curl -N "${inbox('<name>')}/stream"
-   → { "type": "connected" } then { "type": "update", "messages": [...] }
+1. Mint an inbox, then use that exact address wherever a site asks for email:
+   curl -X POST ${base}/api/inbox
+   → { "email": "kxmwbqzt41@kilomail.tech", "list": "...", "code": "...", "stream": "...", "delete": "..." }
+   Pass ?name=mybot if you need a local part you chose. One inbox per signup — never reuse one.
 
-Rules: URL-encode the @ as %40. Use a fresh name for each site, never reuse one across signups. An unknown inbox returns [] instead of 404, so after sending just re-check the list once (~60s); do not poll faster than every 5 seconds. Messages are kept for 30 days.`
+2. Ask for the code instead of reading mail:
+   curl ${base}/api/inbox/<email>/code
+   → { "found": true, "code": "482910", "link": null, "from": "GitHub", "subject": "Verify your device" }
+   Submit "code". If it came back as a button-only mail, "link" holds the verification URL instead.
+   "found": false means nothing has arrived yet: wait at least 5 seconds, then call it again.
+
+3. Throw the inbox away when the signup is done:
+   curl -X DELETE ${base}/api/inbox/<email>
+
+Full inbox, when you need more than the code: ${base}/api/inbox/<email> returns the list,
+${base}/api/inbox/<email>/<id> returns one body, ${base}/api/inbox/<email>/stream pushes changes over SSE.
+
+Rules: URL-encode the address in the path (@ becomes %40). Do not poll faster than once every 5 seconds. Nothing is stored on your side — no account, no cookie, no key.`
 }
