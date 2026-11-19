@@ -1,14 +1,12 @@
-import { siteMode } from './host'
+import { appBase } from './host'
 
 /**
  * The setup prompt the landing page copies — the KiloMail version of Revyl's
  * "Copy setup prompt": paste it into a coding agent and the agent can do the whole
- * signup loop by itself. Built at copy time so the host is always the real one.
+ * signup loop by itself. Built at copy time from the origin that actually answers.
  */
 export function agentPrompt(): string {
-  const base = siteMode() === 'site'
-    ? `https://app.${window.location.hostname.replace(/^www\./, '')}`
-    : window.location.origin
+  const base = appBase()
 
   return `Set up KiloMail in this project so you can receive email without an account. No key, no signup, no rate limit.
 

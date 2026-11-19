@@ -1,0 +1,77 @@
+- generic [ref=f16e5]:
+  - banner [ref=f16e6]:
+    - img "KiloMail" [ref=f16e8]
+    - navigation "Site" [ref=f16e12]:
+      - button "Docs" [ref=f16e13]
+      - button "Switch to dark theme" [ref=f16e16]
+      - button "Open inbox" [ref=f16e20]
+  - main [ref=f16e21]:
+    - generic [ref=f16e22]:
+      - heading "Disposable inboxes for every signup" [level=1] [ref=f16e23]: Disposable inboxesfor every signup
+      - paragraph [ref=f16e24]: A real inbox, ready before you finish typing. Codes are pulled out the moment mail lands, and every address is thrown away when you are done with it.
+      - generic [ref=f16e25]:
+        - button "Open Inbox" [ref=f16e26]
+        - button "Copy prompt" [ref=f16e27]
+      - paragraph [ref=f16e28]: Real-time SSE · Cloudflare MX · 30-day retention
+    - generic [ref=f16e30]:
+      - generic [ref=f16e31]:
+        - generic [ref=f16e35]: kilomail.tech · inbox
+        - generic [ref=f16e36]: live
+      - list [ref=f16e38]:
+        - listitem [ref=f16e39]:
+          - generic [ref=f16e40]: G
+          - generic [ref=f16e41]:
+            - generic [ref=f16e42]:
+              - generic [ref=f16e43]: GitHub
+              - generic [ref=f16e44]: 2s
+            - generic [ref=f16e45]: Verify your device
+            - generic [ref=f16e46]: Use this code to finish signing in.
+          - code [ref=f16e47]: 481-920
+        - listitem [ref=f16e48]:
+          - generic [ref=f16e49]: V
+          - generic [ref=f16e50]:
+            - generic [ref=f16e51]:
+              - generic [ref=f16e52]: Vercel
+              - generic [ref=f16e53]: 12s
+            - generic [ref=f16e54]: Your login code
+            - generic [ref=f16e55]: The code expires in ten minutes.
+          - code [ref=f16e56]: "941203"
+        - listitem [ref=f16e57]:
+          - generic [ref=f16e58]: "N"
+          - generic [ref=f16e59]:
+            - generic [ref=f16e60]:
+              - generic [ref=f16e61]: Notion
+              - generic [ref=f16e62]: 34s
+            - generic [ref=f16e63]: Sign-in link for KiloMail
+            - generic [ref=f16e64]: This link works once, for 15 minutes.
+    - generic [ref=f16e65]:
+      - paragraph [ref=f16e66]: Why KiloMail
+      - generic [ref=f16e67]:
+        - generic [ref=f16e68]:
+          - heading "Instant delivery" [level=2] [ref=f16e72]
+          - paragraph [ref=f16e73]: Emails arrive in seconds via Cloudflare MX routing.
+        - generic [ref=f16e74]:
+          - heading "Zero sign-up" [level=2] [ref=f16e78]
+          - paragraph [ref=f16e79]: No account needed. Generate an inbox and start receiving.
+        - generic [ref=f16e80]:
+          - heading "30-day retention" [level=2] [ref=f16e85]
+          - paragraph [ref=f16e86]: Every message is kept for 30 days, then deleted automatically.
+        - generic [ref=f16e87]:
+          - heading "Live stream" [level=2] [ref=f16e92]
+          - paragraph [ref=f16e93]: Real-time SSE — no polling, no page refreshes.
+        - generic [ref=f16e94]:
+          - heading "Auto-regenerate" [level=2] [ref=f16e101]
+          - paragraph [ref=f16e102]: Generate a fresh address any time with one click.
+        - generic [ref=f16e103]:
+          - heading "Open source" [level=2] [ref=f16e108]
+          - paragraph [ref=f16e109]: MIT licensed. Self-host on Vercel + Upstash in minutes.
+  - contentinfo [ref=f16e110]:
+    - generic [ref=f16e111]:
+      - generic [ref=f16e112]:
+        - img "KiloMail" [ref=f16e113]
+        - generic [ref=f16e117]: Disposable email, done right.
+      - navigation "Footer" [ref=f16e118]:
+        - button "API docs" [ref=f16e119]
+        - link "GitHub" [ref=f16e120] [cursor=pointer]:
+          - /url: https://github.com/Cryptoistaken/KiloMail
+        - button "Open inbox" [ref=f16e124]

@@ -32,7 +32,7 @@ import {
 } from '@/lib/types'
 import { saveToHistory, updateMessageCount } from '@/lib/history'
 import { useRoute, navigate, isEmailPath } from '@/hooks/useRoute'
-import { appUrl, siteUrl } from '@/lib/host'
+import { appBase, resolveAppBase, siteUrl } from '@/lib/host'
 import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 import { extractCode, subjectCode } from '@/lib/codes'
@@ -184,6 +184,10 @@ export default function App() {
 
   // Every press answers back with a short buzz (phones only).
   useEffect(() => installPressFeedback(), [])
+
+  // Decide once whether the inbox is on app.<domain> or still on this origin, so the landing's
+  // button and the copied prompt never point at a host that does not answer.
+  useEffect(() => { void resolveAppBase() }, [])
 
   const autoCopy = useCallback((addr: string) => {
     navigator.clipboard.writeText(addr).then(() => {
@@ -451,9 +455,11 @@ export default function App() {
       <>
         <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background" />}>
           <Landing onLaunch={() => {
-            const target = appUrl('/')
-            if (target) { window.location.href = target; return }
-            markVisited(); navigate('/inbox')
+            // The inbox may live on app.<domain>, or on this origin until that subdomain is
+            // added; resolveAppBase decided once on load which one actually answers.
+            const base = appBase()
+            if (base === window.location.origin) { markVisited(); navigate('/inbox'); return }
+            window.location.href = `${base}/inbox`
           }} />
         </Suspense>
         <Analytics />

@@ -46,13 +46,19 @@ export const onRequest = async ({ request, env }: Ctx): Promise<Response> => {
 
   let load: (() => Promise<{ default: Handler }>) | undefined
 
-  if (section === "inbox" && first) {
-    // "stream" is a literal segment and wins over the [id] one, exactly like on Vercel
-    load = second === "stream"
-      ? () => import("../../api/inbox/[email]/stream")
-      : second
-        ? () => import("../../api/inbox/[email]/[id]")
-        : () => import("../../api/inbox/[email]")
+  if (section === "inbox") {
+    // "stream" and "code" are literal segments and win over the [id] one, exactly like on Vercel.
+    if (!first) {
+      load = () => import("../../api/inbox/index")            // POST /api/inbox — mint an address
+    } else if (second === "stream") {
+      load = () => import("../../api/inbox/[email]/stream")
+    } else if (second === "code") {
+      load = () => import("../../api/inbox/[email]/code")     // GET …/code — the code in one call
+    } else if (second) {
+      load = () => import("../../api/inbox/[email]/[id]")
+    } else {
+      load = () => import("../../api/inbox/[email]")          // GET list, DELETE whole inbox
+    }
   } else if (section === "providers" && first) {
     load = PROVIDERS[first]
   } else if (section === "webhook") {
