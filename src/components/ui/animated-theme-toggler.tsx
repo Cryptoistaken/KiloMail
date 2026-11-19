@@ -1,13 +1,21 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Moon, Sun } from "lucide-react"
+import { Layers, Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
 import { cn } from "@/lib/utils"
+import type { Theme } from "@/hooks/useTheme"
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number
   asDiv?: boolean
+}
+
+const NEXT: Record<Theme, Theme> = { light: "dark", dark: "3d", "3d": "light" }
+const LABEL: Record<Theme, string> = {
+  light: "Switch to dark theme",
+  dark: "Switch to 3D theme",
+  "3d": "Switch to light theme",
 }
 
 export const AnimatedThemeToggler = ({
@@ -16,11 +24,14 @@ export const AnimatedThemeToggler = ({
   asDiv = false,
   ...props
 }: AnimatedThemeTogglerProps) => {
-  const [isDark, setIsDark] = useState(false)
+  const [theme, setTheme] = useState<Theme>("light")
   const elRef = useRef<HTMLButtonElement | HTMLDivElement>(null)
 
   useEffect(() => {
-    const update = () => setIsDark(document.documentElement.classList.contains("dark"))
+    const update = () => {
+      const c = document.documentElement.classList
+      setTheme(c.contains("theme3d") ? "3d" : c.contains("dark") ? "dark" : "light")
+    }
     update()
     const obs = new MutationObserver(update)
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
@@ -39,10 +50,13 @@ export const AnimatedThemeToggler = ({
     const maxRadius = Math.hypot(Math.max(x, vw - x), Math.max(y, vh - y))
 
     const applyTheme = () => {
-      const next = !isDark
-      setIsDark(next)
-      document.documentElement.classList.toggle("dark", next)
-      localStorage.setItem("theme", next ? "dark" : "light")
+      const next = NEXT[theme]
+      setTheme(next)
+      const root = document.documentElement
+      // 3D rides on top of dark so every `dark:` utility still applies.
+      root.classList.toggle("dark", next !== "light")
+      root.classList.toggle("theme3d", next === "3d")
+      localStorage.setItem("theme", next)
     }
 
     if (typeof document.startViewTransition !== "function") {
@@ -57,12 +71,14 @@ export const AnimatedThemeToggler = ({
         { duration, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
       )
     })
-  }, [isDark, duration])
+  }, [theme, duration])
 
   const content = (
     <>
-      {isDark ? <Sun className="h-[18px] w-[18px] shrink-0" /> : <Moon className="h-[18px] w-[18px] shrink-0" />}
-      <span className="sr-only">Toggle theme</span>
+      {theme === "light" && <Moon className="h-[18px] w-[18px] shrink-0" />}
+      {theme === "dark" && <Layers className="h-[18px] w-[18px] shrink-0" />}
+      {theme === "3d" && <Sun className="h-[18px] w-[18px] shrink-0" />}
+      <span className="sr-only">{LABEL[theme]}</span>
     </>
   )
 
@@ -73,6 +89,8 @@ export const AnimatedThemeToggler = ({
         onClick={toggleTheme}
         role="button"
         tabIndex={0}
+        aria-label={LABEL[theme]}
+        title={LABEL[theme]}
         onKeyDown={e => e.key === "Enter" && toggleTheme()}
         className={cn("cursor-pointer", className)}
       >
@@ -86,6 +104,8 @@ export const AnimatedThemeToggler = ({
       type="button"
       ref={elRef as React.Ref<HTMLButtonElement>}
       onClick={toggleTheme}
+      aria-label={LABEL[theme]}
+      title={LABEL[theme]}
       className={cn(className)}
       {...props}
     >

@@ -21,7 +21,9 @@
         try {
           var saved = localStorage.getItem("theme");
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          if (saved === "dark" || (!saved && prefersDark)) {
+          if (saved === "3d") {
+            document.documentElement.classList.add("dark", "theme3d");
+          } else if (saved === "dark" || (!saved && prefersDark)) {
             document.documentElement.classList.add("dark");
           }
         } catch (e) {}

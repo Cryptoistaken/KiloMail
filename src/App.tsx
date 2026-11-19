@@ -539,7 +539,7 @@ export default function App() {
 
         <main className="relative z-10 flex flex-1 gap-3 overflow-hidden p-3">
           <aside className={cn(
-            'flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0',
+            'panel3d flex w-full flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm md:w-80 md:shrink-0',
             (selectedId || panel !== 'inbox') && 'hidden md:flex'
           )}>
             <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}>
@@ -557,7 +557,7 @@ export default function App() {
             </Suspense>
           </aside>
           <section className={cn(
-            'flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
+            'panel3d flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-background/90 shadow-sm backdrop-blur-sm',
             !selectedId && panel === 'inbox' && 'hidden md:flex'
           )}>
             {panel === 'inbox'   && <Suspense fallback={<div className="flex flex-1 items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" /></div>}><MessageView message={fullMsg} loading={msgLoading} inboxEmail={email} onClose={() => { setSelectedId(null); setFullMsg(null) }} onDelete={() => selectedId && deleteMessage(selectedId)} /></Suspense>}
