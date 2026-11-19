@@ -221,7 +221,7 @@ export default function App() {
       if (code) codes[m.id] = code
       // A mail that carries a code does not need its link offered too - the list shows one chip.
       else {
-        const link = extractActionLink(full.text ?? '', full.html ?? '')
+        const link = extractActionLink(full.text ?? '', full.html ?? '', full.from)
         if (link) links[m.id] = link
       }
     }))

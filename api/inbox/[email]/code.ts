@@ -63,7 +63,7 @@ export default async function handler(req: Request): Promise<Response> {
   for (const meta of messages.slice(0, 5)) {
     const body = await redis.get<MessageBody>(`body:${meta.id}`);
     const code = extractCode(body?.text ?? "", body?.html ?? "");
-    const link = code ? null : extractActionLink(body?.text ?? "", body?.html ?? "");
+    const link = code ? null : extractActionLink(body?.text ?? "", body?.html ?? "", meta.from);
     if (!code && !link) continue;
 
     return new Response(JSON.stringify({

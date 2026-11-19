@@ -14,3 +14,6 @@ SKILL.md
 
 # Playwright MCP scratch output
 .playwright-mcp/
+
+# Real mail pulled from production (test/pull-mail.mjs)
+test/data/

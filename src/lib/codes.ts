@@ -46,12 +46,23 @@ function pick(s: string): string | null {
   // otherwise "one-time" (from "one-time passcode") looks like a code.
   const grouped = s.match(/\b([A-Za-z0-9]{2,5}(?:-[A-Za-z0-9]{2,5})+)\b/)
   if (grouped && /\d/.test(grouped[1])) return grouped[1]
-  const tokens = [...s.matchAll(/[A-Za-z0-9]{4,10}/g)].map(m => m[0])
-  return (
-    tokens.find(t => /\d/.test(t)) ??
-    tokens.find(t => /^[A-Z]{4,10}$/.test(t) && !STOP.has(t.toLowerCase())) ??
-    null
-  )
+
+  for (const m of s.matchAll(/[A-Za-z0-9]{4,10}/g)) {
+    const token = m[0]
+    const hasDigit = /\d/.test(token)
+    if (!hasDigit && !/^[A-Z]{4,10}$/.test(token)) continue
+    if (STOP.has(token.toLowerCase())) continue
+
+    // Numbers that are measurements or prices sit right next to their unit ("expires in 10
+    // minutes", "$2400"), and a copyright year sits behind a ©. None of those are codes.
+    const after = s.slice((m.index ?? 0) + token.length, (m.index ?? 0) + token.length + 12)
+    if (/^\s*(%|minutes?|mins?|hours?|hrs?|seconds?|secs?|days?|weeks?|months?|years?)\b/i.test(after)) continue
+    const before = s.slice(Math.max(0, (m.index ?? 0) - 2), m.index ?? 0)
+    if (/[©#$€£]/.test(before)) continue
+
+    return token
+  }
+  return null
 }
 
 /**
@@ -61,7 +72,7 @@ function pick(s: string): string | null {
  * between the token and the keyword are the little ones that build that sentence.
  */
 const LINK =
-  '(?:[\\s-]+(?:is|was|are|were|as|the|your|my|our|a|an|this|that|it|one|time|login|sign[\\s-]?in|verification|security|confirmation|access|sms))*'
+  '(?:[\\s-]+(?:is|was|are|were|as|the|your|my|our|a|an|this|that|it|one|time|login|sign[\\s-]?in|verification|security|confirmation|access|sms|[A-Z][a-z]{2,12}))*'
 const BEFORE = () =>
   new RegExp(`\\b([A-Za-z0-9]{4,10})\\b${LINK}[\\s-]+(?:code|otp|pin|passcode|token)\\b`, 'gi')
 
@@ -70,7 +81,9 @@ export function extractCode(text?: string, html?: string): string | null {
   const hay = scrub([(text || '').trim(), stripHtml(html || '')].filter(Boolean).join('\n'))
   if (!hay) return null
 
-  const near = new RegExp(KEYWORD.source + '[\\s\\S]{0,40}', 'gi')
+  // 140 characters, not 40: "use the verification code below to proceed with the mobile linking
+  // process. 849515" puts the code 45+ characters after the word it belongs to.
+  const near = new RegExp(KEYWORD.source + '[\\s\\S]{0,140}', 'gi')
   for (const w of hay.matchAll(near)) {
     const c = pick(w[0])
     if (c) return c

@@ -1,5 +1,5 @@
 export const HISTORY_KEY = "kilomail_history"
-export const MAX_HISTORY = 50
+export const MAX_HISTORY = 500
 
 export interface HistoryEntry {
   email: string
