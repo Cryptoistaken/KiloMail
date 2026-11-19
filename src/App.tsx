@@ -32,6 +32,7 @@ import {
 } from '@/lib/types'
 import { saveToHistory, updateMessageCount } from '@/lib/history'
 import { useRoute, navigate, isEmailPath } from '@/hooks/useRoute'
+import { appUrl, siteUrl } from '@/lib/host'
 import { generateUsername } from '@/lib/names'
 import { ALL_PROVIDERS, DOMAINS, DEFAULT_DOMAIN, getProvider } from '@/providers/registry'
 import { extractCode, subjectCode } from '@/lib/codes'
@@ -449,7 +450,11 @@ export default function App() {
     return (
       <>
         <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background" />}>
-          <Landing onLaunch={() => { markVisited(); navigate('/inbox') }} />
+          <Landing onLaunch={() => {
+            const target = appUrl('/')
+            if (target) { window.location.href = target; return }
+            markVisited(); navigate('/inbox')
+          }} />
         </Suspense>
         <Analytics />
       </>
@@ -461,7 +466,7 @@ export default function App() {
         <Background />
 
         <header className="relative z-10 flex items-center gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md sm:px-5">
-          <button onClick={() => navigate('/')} className="hidden sm:flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
+          <button onClick={() => { const site = siteUrl(); if (site) window.location.href = site; else navigate('/') }} className="hidden sm:flex items-center gap-2.5 shrink-0 hover:opacity-75 transition-opacity">
             <Logo variant="icon" className="h-7 w-7" />
             <span className="hidden sm:block text-sm font-semibold tracking-tight">KiloMail</span>
           </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { hasVisitedBefore } from '@/lib/types'
+import { siteMode, appUrl } from '@/lib/host'
 
 /** kilomail.tech/<email> is the shareable form of an inbox, so an @ in the path means "this inbox". */
 export function isEmailPath(path: string): boolean {
@@ -12,6 +13,18 @@ function current(): string {
   const raw = hash.startsWith('/') ? hash : window.location.pathname
   const path = raw.replace(/\/+$/, '') || '/'
   if (hash.startsWith('/')) window.history.replaceState(null, '', path)
+
+  const mode = siteMode()
+  // The inbox lives on its own host, so the app's root is an inbox, never the landing page.
+  if (mode === 'app') return path === '/' ? '/inbox' : path
+  // The landing host serves the landing page and the docs; every inbox link belongs on the app.
+  if (mode === 'site') {
+    if (path === '/' || path === '/docs') return path
+    const target = appUrl(path)
+    if (target) window.location.replace(target)
+    return '/'
+  }
+  // One origin (dev, previews): remember that this browser has been here before.
   if (path === '/' && hasVisitedBefore()) return '/inbox'
   return path
 }

@@ -1,15 +1,14 @@
-import { Zap, Shield, Clock, Globe as GlobeIcon, RefreshCw, Sparkles, ArrowRight, BookOpen, Github } from 'lucide-react'
+import { useState } from 'react'
+import { Zap, Shield, Clock, Globe as GlobeIcon, RefreshCw, Sparkles, ArrowRight, Check, Copy, BookOpen, Github } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Meteors } from '@/components/ui/meteors'
 import { DottedMap } from '@/components/ui/dotted-map'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import {  ALL_PROVIDERS } from '@/providers/registry'
 
-// Own domains (the ones we host) — same source as the "Own" tab in the app.
-const OWN_DOMAINS = ALL_PROVIDERS.filter(p => p.id === 'kilolabs').flatMap(p => p.domains)
 import { navigate } from '@/hooks/useRoute'
 import { useTheme } from '@/hooks/useTheme'
+import { agentPrompt } from '@/lib/prompt'
 import { Background } from '@/app/components/Background'
 import { Logo } from '@/app/components/Logo'
 
@@ -36,6 +35,14 @@ export function Landing({ onLaunch }: LandingProps) {
   const is3d = theme === '3d'
   const is3l = theme === '3l'
   const is3 = is3d || is3l
+  const [promptCopied, setPromptCopied] = useState(false)
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(agentPrompt()).then(() => {
+      setPromptCopied(true)
+      setTimeout(() => setPromptCopied(false), 1800)
+    }).catch(() => {})
+  }
 
   return (
     <TooltipProvider>
@@ -68,12 +75,15 @@ export function Landing({ onLaunch }: LandingProps) {
               <Logo variant="icon" className="h-7 w-7 sm:hidden" />
               <Logo variant="logo" className="hidden sm:inline-flex" />
             </div>
-            <nav className="flex items-center gap-3" aria-label="Site">
+            <nav className="flex items-center gap-4" aria-label="Site">
               <button onClick={() => navigate('/docs')}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <BookOpen className="h-3.5 w-3.5" /> Docs
               </button>
               <AnimatedThemeToggler className="surface3d flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm hover:bg-muted transition-colors" />
+              <Button size="sm" onClick={onLaunch} data-buzz="medium" className="h-8 rounded-md px-3 text-[13px] font-semibold">
+                Open inbox
+              </Button>
             </nav>
           </header>
           <main>
@@ -88,31 +98,26 @@ export function Landing({ onLaunch }: LandingProps) {
                 </span>
               </h1>
               <p className="mt-6 max-w-[560px] text-[1.05rem] leading-relaxed text-muted-foreground">
-                A real inbox on four domains we own, ready before you finish typing.
-                Codes are pulled out the moment mail lands, and every address is
-                thrown away when you are done with it.
+                A real inbox, ready before you finish typing. Codes are pulled out the
+                moment mail lands, and every address is thrown away when you are done
+                with it.
               </p>
-              <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-                <div className="cta3d">
-                  <Button size="lg" onClick={onLaunch} data-buzz="medium" className="h-11 gap-2 px-6 text-sm font-semibold shadow-lg shadow-primary/20">
-                    Open Inbox <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Button size="lg" variant="outline" onClick={onLaunch} data-buzz="medium" className="h-11 px-6 text-sm font-medium">
-                  Generate address
+              {/* Revyl's shell: one white bar holding the violet key and a quiet second action. */}
+              <div className={is3 ? 'cta3d mt-9 flex items-center gap-1' : 'mt-9 flex flex-wrap items-center justify-center gap-3'}>
+                <Button size="lg" onClick={onLaunch} data-buzz="medium" className="h-11 gap-2 px-6 text-sm font-semibold">
+                  Open Inbox <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button size="lg" variant="ghost" onClick={copyPrompt} data-buzz="light"
+                  className={is3
+                    ? 'h-11 gap-2 px-4 text-sm font-medium text-[#171717] hover:bg-[#f5f5f5]'
+                    : 'h-11 gap-2 px-4 text-sm font-medium text-foreground hover:bg-muted'}>
+                  {promptCopied ? <Check className="h-4 w-4 text-[#6b57f5]" /> : <Copy className="h-4 w-4 opacity-70" />}
+                  {promptCopied ? 'Prompt copied' : 'Copy prompt'}
                 </Button>
               </div>
               <p className="mt-8 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Real-time SSE · Cloudflare MX · 30-day retention
               </p>
-              {/* Revyl puts the logos of who trusts them here; ours are the domains we run. */}
-              <div className="mt-9 flex w-full max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
-                {OWN_DOMAINS.map(d => (
-                  <span key={d} className="font-mono text-[15px] tracking-tight text-muted-foreground">
-                    {d}
-                  </span>
-                ))}
-              </div>
             </div>
 
             {/* The product, one scroll in — the frame is the 3D theme's violet hairline. */}
