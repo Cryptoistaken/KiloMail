@@ -72,7 +72,7 @@ function pick(s: string): string | null {
  * between the token and the keyword are the little ones that build that sentence.
  */
 const LINK =
-  '(?:[\\s-]+(?:is|was|are|were|as|the|your|my|our|a|an|this|that|it|one|time|login|sign[\\s-]?in|verification|security|confirmation|access|sms|[A-Z][a-z]{2,12}))*'
+  '(?:[\\s\\-–—]+(?:is|was|are|were|as|the|your|my|our|a|an|this|that|it|one|time|login|sign[\\s-]?in|verification|security|confirmation|access|sms|[A-Z][a-z]{2,12}))*'
 const BEFORE = () =>
   new RegExp(`\\b([A-Za-z0-9]{4,10})\\b${LINK}[\\s-]+(?:code|otp|pin|passcode|token)\\b`, 'gi')
 
@@ -107,16 +107,20 @@ export function extractCode(text?: string, html?: string): string | null {
 
 /** The copy chip shown straight from the list, before any body is fetched. */
 export function subjectCode(subject?: string): string | null {
-  const s = scrub(subject || '')
+  const s = scrub(subject || '').trim()
   const near = s.match(new RegExp(KEYWORD.source + '[\\s\\S]{0,40}', 'i'))
   const c = near ? pick(near[0]) : null
   if (c) return c
 
-  const digits = s.match(/\b(\d{4,8})\b/)
-  if (digits) return digits[1]
-
-  for (const m of s.matchAll(/\b([A-Z0-9]{4,8})\b/g)) {
-    if (/[A-Z]/.test(m[1]) && /\d/.test(m[1])) return m[1]
+  // The far more common subject shape puts the code first: "581447 is your verification code".
+  for (const w of s.matchAll(BEFORE())) {
+    if (/\d/.test(w[1]) || /^[A-Z]{4,10}$/.test(w[1])) return w[1]
   }
+
+  // A subject that is nothing but the code ("482913", "KQZX", "A1B2C3") is common, and the
+  // keyword window above cannot see it. A subject that merely *contains* a number is not a code -
+  // accepting one turned a timestamp ("… | 2026-11-21 01:18:58") into a chip that copied "2026".
+  const bare = s.replace(/^[^\w]+|[^\w]+$/g, '')
+  if (/^[A-Za-z0-9]{4,10}$/.test(bare) && (/\d/.test(bare) || /^[A-Z]{4,10}$/.test(bare))) return bare
   return null
 }

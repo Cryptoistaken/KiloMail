@@ -88,6 +88,10 @@ Current baseline: 7,804 codes (0 wrong), 150 links (7 flagged, all real). Showin
 correct when a link only *looks* like a verification link; showing a wrong one is the bug users
 report.
 
+`subjectCode()` (the chip drawn straight from the list) only accepts a code next to a code word,
+or a subject that is *nothing but* the code. It must never take a bare number from anywhere in a
+subject — a timestamp used to turn "… | 2026-11-21 01:18:58" into a chip reading `2026`.
+
 ## Themes
 
 Four, cycled by `AnimatedThemeToggler`: `light`, `dark` (Tailwind `.dark`), `3d` (`.dark` +
