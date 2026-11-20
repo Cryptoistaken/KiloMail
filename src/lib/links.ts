@@ -36,9 +36,21 @@ const stripTags = (s: string) => s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
 function clean(raw: string): string | null {
   const url = trim(decode(raw.trim()))
   if (!/^https?:\/\/\S+\.\S+/i.test(url) || JUNK.test(url)) return null
-  // A verification link never carries campaign tags, and never wraps another URL inside its
-  // path (that is a click counter passing you along).
-  if (/[?&]utm_/i.test(url) || /%2f%2f|https?%3a|\/https?:\/\//i.test(url)) return null
+  // A verification link never carries campaign tags.
+  if (/[?&]utm_/i.test(url)) return null
+  const WRAPPED = /%2f%2f|https?%3a|https?%2f%2f|\/https?:\/\//i
+  try {
+    const u = new URL(url)
+    // A click counter wraps another URL inside its *path* (c.vialoops.com/CL0/https:%2F%2F...).
+    if (WRAPPED.test(u.pathname)) return null
+    // In the query it is often innocent: ?redirect_to=https%3A%2F%2F... is how a verification
+    // link says where to land after it verifies you (app.bfl.ai/auth/v1/verify?redirect_to=…).
+    // But a wrapper whose path is not itself a verification step (facebook.com/n/?u=http%3A…) is
+    // still a tracker, so only a verification-looking path gets to carry a wrapped URL.
+    if (WRAPPED.test(u.search + u.hash) && !GOOD_PATH.test(u.pathname)) return null
+  } catch {
+    return null
+  }
   return url
 }
 

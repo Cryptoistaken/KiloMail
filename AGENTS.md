@@ -84,7 +84,7 @@ by eye:
 3. `bun test/verify.ts` — **bad codes must stay 0**; bad links must not grow
 4. `bun test/check-detectors.ts` — codes found should not drop
 
-Current baseline: 7,804 codes (0 wrong), 149 links (7 flagged, all real). Showing nothing is
+Current baseline: 7,804 codes (0 wrong), 150 links (7 flagged, all real). Showing nothing is
 correct when a link only *looks* like a verification link; showing a wrong one is the bug users
 report.
 
