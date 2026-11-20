@@ -24,6 +24,22 @@ const CLICK_HOST = /^(cl|click|clicks|email|em|links?|track|tracking|go|t|r|mail
 const URL_RE = /https?:\/\/[^\s"'<>()[\]{}]+/gi
 const ANCHOR = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]{0,160}?)<\/a>/gi
 
+/** A query parameter that is clearly a secret, whatever the sender named it. */
+const TOKEN_PARAM = /[?&#](token|code|key|secret|t|stytch_token_type|to|u|r|redirect|callback|next)=/i
+/** Opaque value: long, no spaces, letters and digits mixed (a base64 payload or a session id). */
+const OPAQUE = /^[A-Za-z0-9_\-+/=]{20,}$/
+
+/**
+ * `platform.parallel.ai/redirect?to=<407-char base64>` has no verification word in its path and the
+ * parameter is called `to`, not `token` - but a long unreadable value on the sender's own domain,
+ * next to "Sign in", is a token all the same.
+ */
+function tokenish(u: URL): boolean {
+  if (TOKEN_PARAM.test(u.search + u.hash)) return true
+  return [...u.searchParams.values()].some(v => OPAQUE.test(v) && /\d/.test(v) && /[A-Za-z]/.test(v))
+}
+
+
 const decode = (s: string) =>
   s.replace(/&amp;/gi, '&').replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d))
     .replace(/&quot;/gi, '"').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
@@ -131,7 +147,7 @@ export function extractActionLink(text?: string, html?: string, from?: string): 
   const u = new URL(best.url)
   const target = u.pathname + u.search + u.hash
   const looksLikeVerification =
-    (GOOD_PATH.test(target) || /[?&#](token|code|key|secret|t|stytch_token_type)=/i.test(u.search + u.hash)) &&
+    (GOOD_PATH.test(target) || tokenish(u)) &&
     // A plain /login or /signin page is a door, not the link that verifies you.
     !(/^\/?(login|log-in|signin|sign-in)\/?$/i.test(u.pathname) && !u.search && !u.hash)
   return looksLikeVerification ? best.url : null

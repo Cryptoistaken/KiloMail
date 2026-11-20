@@ -17,8 +17,10 @@ table, and the rules for the code/link detectors.
   anchored to a code-ish word, so a ZIP code in a mailing address or a CSS hex colour is never offered.
   Logic lives in `src/lib/codes.ts`; bodies are fetched in the background to find codes that only appear there.
 - **Verification links** (`src/lib/links.ts`) are scored, not picked: the path has to say
-  verify/confirm/magic/token or the button has to say "Verify email". Homepages, privacy policies and
-  tracking pixels are never offered. Both detectors are measured against ~10k real mails — see `test/`.
+  verify/confirm/magic/token, the URL has to carry a real token (a named one, or a long opaque
+  value on the sender's own domain), or the button has to say "Verify email". Homepages, privacy
+  policies and tracking pixels are never offered. Both detectors are measured against ~10k real
+  mails — see `test/`.
 - **Auto-copy.** The newest detected code — or, if no mail carries one, the newest verification link —
   is written to the clipboard as soon as it is found, with a short "Copied code · 849515" toast. A
   code always wins over a link, the same value is never copied twice, and a background tab retries
