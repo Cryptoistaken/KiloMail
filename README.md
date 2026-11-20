@@ -19,6 +19,10 @@ table, and the rules for the code/link detectors.
 - **Verification links** (`src/lib/links.ts`) are scored, not picked: the path has to say
   verify/confirm/magic/token or the button has to say "Verify email". Homepages, privacy policies and
   tracking pixels are never offered. Both detectors are measured against ~10k real mails — see `test/`.
+- **Auto-copy.** The newest detected code — or, if no mail carries one, the newest verification link —
+  is written to the clipboard as soon as it is found, with a short "Copied code · 849515" toast. A
+  code always wins over a link, the same value is never copied twice, and a background tab retries
+  when it is focused.
 - **Agent API.** `POST /api/inbox` mints an address, `GET /api/inbox/:email/code` returns the newest
   code (or link) in one call. The landing page's *Copy prompt* hands that workflow to a coding agent.
 - **Sender identity.** The worker stores the header `From` address plus its display name as `fromName`,

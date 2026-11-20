@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { cn } from '@/lib/utils'
 import { Copy, Check, Inbox, History, Plus, Shuffle, PencilLine, BookOpen, X } from 'lucide-react'
@@ -231,6 +231,45 @@ export default function App() {
 
   const prefetchRef = useRef(prefetchBodyCodes)
   useEffect(() => { prefetchRef.current = prefetchBodyCodes }, [prefetchBodyCodes])
+
+  // The newest code - or, when no mail carries one, the newest verification link - goes to the
+  // clipboard the moment it is found, so the chip never has to be clicked. One value is copied
+  // once; a background tab that was refused tries again when it is focused.
+  const lastAutoCopy = useRef<string | null>(null)
+  const [autoCopied, setAutoCopied] = useState<{ value: string; code: boolean } | null>(null)
+
+  const detected = useMemo(() => {
+    const ordered = [...messages].sort(
+      (a, b) => (b.arrivedMs ?? arrivalOf(b)) - (a.arrivedMs ?? arrivalOf(a)),
+    )
+    for (const m of ordered) {
+      const code = subjectCode(m.subject) ?? bodyCodes[m.id]
+      if (code) return { value: code, code: true }
+    }
+    for (const m of ordered) {
+      const link = bodyLinks[m.id]
+      if (link) return { value: link, code: false }
+    }
+    return null
+  }, [messages, bodyCodes, bodyLinks])
+
+  const autoCopyDetected = useCallback((value: string, code: boolean) => {
+    if (lastAutoCopy.current === value) return
+    navigator.clipboard.writeText(value).then(() => {
+      lastAutoCopy.current = value
+      setAutoCopied({ value, code })
+      setTimeout(() => setAutoCopied(v => (v?.value === value ? null : v)), 3000)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => { if (detected) autoCopyDetected(detected.value, detected.code) }, [detected, autoCopyDetected])
+
+  useEffect(() => {
+    if (!detected) return
+    const retry = () => { if (document.hasFocus()) autoCopyDetected(detected.value, detected.code) }
+    window.addEventListener('focus', retry)
+    return () => window.removeEventListener('focus', retry)
+  }, [detected, autoCopyDetected])
 
   const resetInbox = (next: string) => {
     persistInbox(next)
@@ -687,6 +726,12 @@ export default function App() {
             </DockIcon>
           </Dock>
         </footer>
+
+        {autoCopied && (
+          <div className="pointer-events-none fixed bottom-24 left-1/2 z-50 max-w-[92vw] -translate-x-1/2 truncate rounded-full border border-border bg-card px-4 py-2 text-xs text-card-foreground shadow-lg">
+            Copied {autoCopied.code ? 'code' : 'link'} · {autoCopied.value.length > 36 ? `${autoCopied.value.slice(0, 36)}…` : autoCopied.value}
+          </div>
+        )}
 
         {customModal && (
           <CustomInboxModal
