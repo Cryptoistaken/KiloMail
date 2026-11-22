@@ -49,6 +49,14 @@ const trim = (u: string) => u.replace(/[.,;:!?)\]}>'"]+$/, '')
 
 const stripTags = (s: string) => s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
+/**
+ * The words a reader actually sees. Senders that fear link-stripping put the URL in the anchor's
+ * text and leave href="#", so the real target only exists here (auth.giga.store/auth/realms/…).
+ */
+const visibleText = (html: string) =>
+  decode(html.replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+
 function clean(raw: string): string | null {
   const url = trim(decode(raw.trim()))
   if (!/^https?:\/\/\S+\.\S+/i.test(url) || JUNK.test(url)) return null
@@ -136,6 +144,13 @@ export function extractActionLink(text?: string, html?: string, from?: string): 
   // No text part (or nothing matched): the link's own label says what it does.
   for (const m of (html || '').matchAll(ANCHOR)) {
     consider(m[1], stripTags(m[2]))
+  }
+
+  // Last: URLs written out as visible text, for mail where the button's href is just "#".
+  const plain = visibleText(html || '')
+  for (const m of plain.matchAll(URL_RE)) {
+    const at = m.index ?? 0
+    consider(m[0], plain.slice(Math.max(0, at - 60), at))
   }
 
   const best = candidates.reduce<Candidate | null>((a, b) => (!a || b.s > a.s ? b : a), null)
