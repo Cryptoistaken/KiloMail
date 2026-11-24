@@ -39,6 +39,18 @@ function tokenish(u: URL): boolean {
   return [...u.searchParams.values()].some(v => OPAQUE.test(v) && /\d/.test(v) && /[A-Za-z]/.test(v))
 }
 
+/**
+ * A random-looking identifier in the path itself: `trial-5232628.okta.com/welcome/GvF70ueyKgGGHxmnskH8`.
+ * Mixed case plus a digit is what a generated token looks like; a product code or a slug
+ * (`ORD2024118822`, `hello-world-2026`) is not. Only trusted on the sender's own domain.
+ */
+const PATH_TOKEN = /^[A-Za-z0-9]{16,}$/
+function opaquePath(u: URL): boolean {
+  return u.pathname.split('/').some(
+    seg => PATH_TOKEN.test(seg) && /\d/.test(seg) && /[a-z]/.test(seg) && /[A-Z]/.test(seg),
+  )
+}
+
 
 const decode = (s: string) =>
   s.replace(/&amp;/gi, '&').replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d))
@@ -161,8 +173,9 @@ export function extractActionLink(text?: string, html?: string, from?: string): 
   if (best.s < 3) return null
   const u = new URL(best.url)
   const target = u.pathname + u.search + u.hash
+  const sameOrg = !!sender && org(u.hostname) === org(sender)
   const looksLikeVerification =
-    (GOOD_PATH.test(target) || tokenish(u)) &&
+    (GOOD_PATH.test(target) || tokenish(u) || (sameOrg && opaquePath(u))) &&
     // A plain /login or /signin page is a door, not the link that verifies you.
     !(/^\/?(login|log-in|signin|sign-in)\/?$/i.test(u.pathname) && !u.search && !u.hash)
   return looksLikeVerification ? best.url : null
