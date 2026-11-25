@@ -13,6 +13,9 @@ const KEYWORD = /(?:\b(?:verification|confirmation|security|one[-\s]?time|login|
 const STOP = new Set([
   'code', 'otp', 'pin', 'token', 'your', 'you', 'the', 'this', 'that', 'only', 'please',
   'enter', 'below', 'above', 'sent', 'send', 'expires', 'expire', 'valid', 'here', 'use',
+  // The word before "code" is often the keyword's own adjective, and it is often in CAPITALS:
+  // "YOUR ACCOUNT VERIFICATION CODE" used to yield a 10-character slice of VERIFICATION.
+  'verification', 'confirmation', 'security', 'authentication', 'passcode', 'password',
 ])
 
 /**
@@ -47,7 +50,13 @@ function pick(s: string): string | null {
   const grouped = s.match(/\b([A-Za-z0-9]{2,5}(?:-[A-Za-z0-9]{2,5})+)\b/)
   if (grouped && /\d/.test(grouped[1])) return grouped[1]
 
-  for (const m of s.matchAll(/[A-Za-z0-9]{4,10}/g)) {
+  // A token with a digit wins over a word in capitals: "Hello, ROJE BEGUM ... your code Your
+  // verification code is 269662" used to hand back the customer's name. The letters-only shape
+  // (KQZX, TPYHMZ) is only used when the window holds no number at all.
+  let lettersOnly: string | null = null
+  // Word boundaries matter: without them a 12-letter word in capitals ("VERIFICATION") is cut
+  // down to its first ten characters and offered as a code.
+  for (const m of s.matchAll(/\b[A-Za-z0-9]{4,10}\b/g)) {
     const token = m[0]
     const hasDigit = /\d/.test(token)
     if (!hasDigit && !/^[A-Z]{4,10}$/.test(token)) continue
@@ -60,9 +69,10 @@ function pick(s: string): string | null {
     const before = s.slice(Math.max(0, (m.index ?? 0) - 2), m.index ?? 0)
     if (/[©#$€£]/.test(before)) continue
 
-    return token
+    if (hasDigit) return token
+    if (!lettersOnly) lettersOnly = token
   }
-  return null
+  return lettersOnly
 }
 
 /**
