@@ -17,9 +17,13 @@ function current(): string {
   const mode = siteMode()
   // The inbox lives on its own host, so the app's root is an inbox, never the landing page.
   if (mode === 'app') return path === '/' ? '/inbox' : path
-  // The landing host always shows the landing page at its root; inbox links still work there,
-  // which is what keeps shared links alive before the app subdomain exists.
-  if (mode === 'site') return path
+  // The landing host shows the landing page at its root for anyone new. But a browser that has
+  // already used an inbox here wants that inbox, not the pitch: opening kilomail.tech goes
+  // straight to it. `/?home` asks for the landing page on purpose.
+  if (mode === 'site') {
+    if (path === '/' && hasVisitedBefore() && !/[?&]home\b/.test(window.location.search)) return '/inbox'
+    return path
+  }
   // One origin (dev, previews): remember that this browser has been here before.
   if (path === '/' && hasVisitedBefore()) return '/inbox'
   return path

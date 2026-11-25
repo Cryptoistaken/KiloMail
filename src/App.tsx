@@ -234,8 +234,9 @@ export default function App() {
 
   // The newest code - or, when no mail carries one, the newest verification link - goes to the
   // clipboard the moment it is found, so the chip never has to be clicked. One value is copied
-  // once; a background tab that was refused tries again when it is focused.
+  // once; a write the browser refused is retried on the first focus, tap or keypress.
   const lastAutoCopy = useRef<string | null>(null)
+  const pendingCopy = useRef<{ value: string; code: boolean } | null>(null)
   const [autoCopied, setAutoCopied] = useState<{ value: string; code: boolean } | null>(null)
 
   const detected = useMemo(() => {
@@ -253,23 +254,47 @@ export default function App() {
     return null
   }, [messages, bodyCodes, bodyLinks])
 
+  const flushCopy = useCallback(() => {
+    const job = pendingCopy.current
+    if (!job || lastAutoCopy.current === job.value) return
+    const legacyCopy = () => {
+      // The async API refuses a cold page in some browsers; the old textarea trick still works
+      // once the user has touched the page, and it is what turns a silent failure into a copy.
+      const ta = document.createElement('textarea')
+      ta.value = job.value
+      ta.setAttribute('readonly', '')
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'
+      document.body.appendChild(ta)
+      ta.select()
+      const ok = document.execCommand('copy')
+      ta.remove()
+      if (!ok) throw new Error('copy refused')
+    }
+    navigator.clipboard.writeText(job.value).catch(legacyCopy).then(() => {
+      lastAutoCopy.current = job.value
+      pendingCopy.current = null
+      setAutoCopied(job)
+      setTimeout(() => setAutoCopied(v => (v?.value === job.value ? null : v)), 3000)
+    }).catch(() => { /* not focused / not allowed yet - the listeners below try again */ })
+  }, [])
+
   const autoCopyDetected = useCallback((value: string, code: boolean) => {
     if (lastAutoCopy.current === value) return
-    navigator.clipboard.writeText(value).then(() => {
-      lastAutoCopy.current = value
-      setAutoCopied({ value, code })
-      setTimeout(() => setAutoCopied(v => (v?.value === value ? null : v)), 3000)
-    }).catch(() => {})
-  }, [])
+    pendingCopy.current = { value, code }
+    flushCopy()
+  }, [flushCopy])
 
   useEffect(() => { if (detected) autoCopyDetected(detected.value, detected.code) }, [detected, autoCopyDetected])
 
+  // A cold page has no user activation, and Chrome refuses a clipboard write from a tab it does not
+  // count as focused. That is why the copy only seemed to happen after pressing Refresh - the click
+  // unlocked it. Retry on those same events instead of waiting for that click.
   useEffect(() => {
-    if (!detected) return
-    const retry = () => { if (document.hasFocus()) autoCopyDetected(detected.value, detected.code) }
-    window.addEventListener('focus', retry)
-    return () => window.removeEventListener('focus', retry)
-  }, [detected, autoCopyDetected])
+    const retry = () => { if (pendingCopy.current) flushCopy() }
+    const events = ['focus', 'click', 'pointerdown', 'keydown', 'touchstart'] as const
+    events.forEach(e => window.addEventListener(e, retry, { capture: true }))
+    return () => events.forEach(e => window.removeEventListener(e, retry, { capture: true }))
+  }, [flushCopy])
 
   const resetInbox = (next: string) => {
     persistInbox(next)

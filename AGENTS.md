@@ -110,6 +110,10 @@ one origin. `app.kilomail.tech` may not exist yet, so `resolveAppBase()` probes 
 landing falls back to the current origin. Never hardcode `app.kilomail.tech` in UI code — ask
 `appBase()`.
 
+On the apex, a browser that has used an inbox before (localStorage `kilomail_visited`) is sent
+straight from `/` to its saved inbox, because that is what opening kilomail.tech means to them.
+`https://kilomail.tech/?home` shows the landing page on purpose.
+
 ## Redis
 
 ```
