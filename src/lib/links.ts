@@ -12,7 +12,7 @@ const ACTION =
   /(continue|verif\w*|confirm\w*|sign[-\s]?in|log[-\s]?in|activate|reset|click here|complete|finish|accept|unlock|set up)/i
 
 /** Words in the URL itself that mean "this goes to a verification step". */
-const GOOD_PATH = /(verif|confirm|magic|auth|token|activate|reset|signup|sign-up|signin|sign-in|validat|passcode|otp|code|password|login|log-in|account\/verify)/i
+const GOOD_PATH = /(verif|confirm|magic|\bauth\b|\bauth\/|token|activate|reset|signup|sign-up|signin|sign-in|validat|passcode|otp|\bcode\b|\bcode\/|password|login|log-in|account\/verify)/i
 
 /** Links that are never the one someone came for. */
 const JUNK =
@@ -32,11 +32,19 @@ const OPAQUE = /^[A-Za-z0-9_\-+/=]{20,}$/
 /**
  * `platform.parallel.ai/redirect?to=<407-char base64>` has no verification word in its path and the
  * parameter is called `to`, not `token` - but a long unreadable value on the sender's own domain,
- * next to "Sign in", is a token all the same.
+ * next to "Sign in", is a token all the same. Campaign tags are excluded first: their values are
+ * long, mixed, and say nothing (utm_campaign=2025_8_nur_us_can_p0_autorespond_api_keys_p).
  */
-function tokenish(u: URL): boolean {
-  if (TOKEN_PARAM.test(u.search + u.hash)) return true
-  return [...u.searchParams.values()].some(v => OPAQUE.test(v) && /\d/.test(v) && /[A-Za-z]/.test(v))
+const TAG = /^(utm_|gclid$|fbclid$|mc_|_gl$|ref$|source$|campaign$)/i
+
+/** The query without campaign tags. Only used for judging a link, never for returning it. */
+function coreParams(u: URL): [string, string][] {
+  return [...u.searchParams.entries()].filter(([k]) => !TAG.test(k))
+}
+
+function tokenish(core: string, kept: [string, string][]): boolean {
+  if (TOKEN_PARAM.test(core)) return true
+  return kept.some(([, v]) => OPAQUE.test(v) && /\d/.test(v) && /[A-Za-z]/.test(v))
 }
 
 /**
@@ -72,8 +80,8 @@ const visibleText = (html: string) =>
 function clean(raw: string): string | null {
   const url = trim(decode(raw.trim()))
   if (!/^https?:\/\/\S+\.\S+/i.test(url) || JUNK.test(url)) return null
-  // A verification link never carries campaign tags.
-  if (/[?&]utm_/i.test(url)) return null
+  // Campaign tags are not a reason to throw a link away: Firebase's own sign-in link carries
+  // utm_campaign=oob_link_template. A marketing link is still refused later, for having no token.
   const WRAPPED = /%2f%2f|https?%3a|https?%2f%2f|\/https?:\/\//i
   try {
     const u = new URL(url)
@@ -172,11 +180,14 @@ export function extractActionLink(text?: string, html?: string, from?: string): 
   // A path that says "verify" already earns 3; anything lower is a guess, so say nothing.
   if (best.s < 3) return null
   const u = new URL(best.url)
-  const target = u.pathname + u.search + u.hash
+  const kept = coreParams(u)
+  const core = kept.length ? `?${new URLSearchParams(kept).toString()}` : ''
+  const target = u.pathname + core + u.hash
   const sameOrg = !!sender && org(u.hostname) === org(sender)
   const looksLikeVerification =
-    (GOOD_PATH.test(target) || tokenish(u) || (sameOrg && opaquePath(u))) &&
-    // A plain /login or /signin page is a door, not the link that verifies you.
-    !(/^\/?(login|log-in|signin|sign-in)\/?$/i.test(u.pathname) && !u.search && !u.hash)
+    (GOOD_PATH.test(target) || tokenish(core + u.hash, kept) || (sameOrg && opaquePath(u))) &&
+    // A plain /login or /signin page is a door, not the link that verifies you - even when the mail
+    // appended its campaign tags to it.
+    !(/^\/?(login|log-in|signin|sign-in)\/?$/i.test(u.pathname) && !core && !u.hash)
   return looksLikeVerification ? best.url : null
 }

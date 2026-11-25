@@ -242,11 +242,11 @@ export default function App() {
     const ordered = [...messages].sort(
       (a, b) => (b.arrivedMs ?? arrivalOf(b)) - (a.arrivedMs ?? arrivalOf(a)),
     )
+    // The newest mail that carries anything wins; inside it a code beats a link. Picking "any code"
+    // anywhere would copy a code from an old mail while a fresh sign-in link sat at the top.
     for (const m of ordered) {
       const code = subjectCode(m.subject) ?? bodyCodes[m.id]
       if (code) return { value: code, code: true }
-    }
-    for (const m of ordered) {
       const link = bodyLinks[m.id]
       if (link) return { value: link, code: false }
     }
