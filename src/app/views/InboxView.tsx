@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { MessageSkeleton } from '@/app/components/MessageSkeleton'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
-import { senderFull, senderSecondary } from '@/lib/sender'
+import { senderLabel, senderSecondary } from '@/lib/sender'
 import { subjectCode } from '@/lib/codes'
 import { agoLabel } from '@/lib/ago'
 import { RollingAgo } from '@/app/components/Rolling'
@@ -152,7 +152,7 @@ export function InboxView({
                           title={senderSecondary(msg) ?? undefined}
                           className={cn('truncate text-sm', !msg.read ? 'font-semibold' : 'font-medium')}
                         >
-                          {senderFull(msg)}
+                          {senderLabel(msg)}
                         </span>
                       </div>
                       <span className="shrink-0 text-xs text-muted-foreground"><RollingAgo text={arrival(msg)} /></span>

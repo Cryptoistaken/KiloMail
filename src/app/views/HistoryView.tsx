@@ -3,7 +3,7 @@ import { History, RefreshCw, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SenderAvatar } from '@/app/components/SenderAvatar'
 import { ConfirmDialog } from '@/app/components/ConfirmDialog'
-import { senderFull } from '@/lib/sender'
+import { senderLabel, senderSecondary } from '@/lib/sender'
 import { getProvider } from '@/providers/registry'
 import { loadHistory, updateMessageCount, clearHistory, MAX_HISTORY, type HistoryEntry } from '@/lib/history'
 import type { MessageMeta } from '@/lib/types'
@@ -173,7 +173,7 @@ export function HistoryView({ onSwitch, onClear }: HistoryViewProps) {
                     >
                       <SenderAvatar from={m.from} fromName={m.fromName} className="mt-0.5 h-5 w-5 text-[9px]" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[11px] font-medium text-foreground">{senderFull(m)}</span>
+                        <span title={senderSecondary(m) ?? undefined} className="block truncate text-[11px] font-medium text-foreground">{senderLabel(m)}</span>
                         <span className="block truncate text-[11px] text-muted-foreground">{m.subject || '(no subject)'}</span>
                       </span>
                     </button>
