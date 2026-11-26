@@ -7,7 +7,12 @@
  * "code" can never become a copy chip.
  */
 
-const KEYWORD = /(?:\b(?:verification|confirmation|security|one[-\s]?time|login|access|sms)[\s-]*)?\b(?:code|otp|pin|passcode|token)\b/i
+// English words, plus the same words in Russian: "Ваш код входа в Смету PRO: 340850" is a code
+// mail too. `\b` only knows A-Za-z0-9_, so it can never sit next to a Cyrillic word - the edges
+// are spelled out instead.
+const CODE_WORD = 'code|otp|pin|passcode|token|код|пароль|пин'
+const EDGE = '[^A-Za-z0-9\\u0400-\\u04FF]'
+const KEYWORD = new RegExp(`(?:${EDGE}|^)(?:${CODE_WORD})(?![A-Za-z0-9\\u0400-\\u04FF])`, 'i')
 
 // Words that sit next to the keyword but are never the code.
 const STOP = new Set([
