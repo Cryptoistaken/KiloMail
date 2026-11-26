@@ -44,11 +44,27 @@ function stripHtml(html: string): string {
     .trim()
 }
 
+/**
+ * "It was requested at 26 November 2026, 08:44 UTC" - that 2026 is a date, not a code, and it sat
+ * 30 characters after the word "code", which is why it won. A four-digit year only counts as a
+ * date when something around it says so, so a real code of 2026 (or 1999) still works.
+ */
+const MONTH = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b/i
+function isYearish(s: string, at: number, token: string): boolean {
+  if (!/^(19|20)\d{2}$/.test(token)) return false
+  const before = s.slice(Math.max(0, at - 18), at)
+  const after = s.slice(at + token.length, at + token.length + 12)
+  return MONTH.test(before)                    // 26 November 2026
+    || /^\s*[-/.]\s*\d{1,2}/.test(after)       // 2026-11-21, 2026/11/21
+    || /^\s*,?\s*\d{1,2}:\d{2}/.test(after)    // 2026, 08:44
+}
+
 function pick(s: string): string | null {
   // Grouped digits like 123-456 - but only when the group actually contains a digit,
   // otherwise "one-time" (from "one-time passcode") looks like a code.
   const grouped = s.match(/\b([A-Za-z0-9]{2,5}(?:-[A-Za-z0-9]{2,5})+)\b/)
-  if (grouped && /\d/.test(grouped[1])) return grouped[1]
+  // A date is not a grouped code: 2026-11-21.
+  if (grouped && /\d/.test(grouped[1]) && !/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(grouped[1])) return grouped[1]
 
   // A token with a digit wins over a word in capitals: "Hello, ROJE BEGUM ... your code Your
   // verification code is 269662" used to hand back the customer's name. The letters-only shape
@@ -68,6 +84,7 @@ function pick(s: string): string | null {
     if (/^\s*(%|minutes?|mins?|hours?|hrs?|seconds?|secs?|days?|weeks?|months?|years?)\b/i.test(after)) continue
     const before = s.slice(Math.max(0, (m.index ?? 0) - 2), m.index ?? 0)
     if (/[©#$€£]/.test(before)) continue
+    if (isYearish(s, m.index ?? 0, token)) continue
 
     if (hasDigit) return token
     if (!lettersOnly) lettersOnly = token
