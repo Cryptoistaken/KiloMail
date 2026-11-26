@@ -22,7 +22,12 @@ const JUNK =
 const CLICK_HOST = /^(cl|click|clicks|email|em|links?|track|tracking|go|t|r|mailer|news|ablink|mailchi|list-manage|createsend|hubspotlinks|trk|eml|cmail)\./i
 
 const URL_RE = /https?:\/\/[^\s"'<>()[\]{}]+/gi
-const ANCHOR = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]{0,160}?)<\/a>/gi
+// Wide enough for a button made of an <img> (the tag alone can be 180 characters), small enough
+// that it cannot swallow a whole layout table.
+const ANCHOR = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]{0,600}?)<\/a>/gi
+/** A link whose "label" is a picture still says what it does in the alt text ("verify-email"). */
+const altText = (html: string) =>
+  [...html.matchAll(/alt\s*=\s*["']([^"']*)["']/gi)].map(m => m[1]).join(' ').trim()
 
 /** A query parameter that is clearly a secret, whatever the sender named it. */
 const TOKEN_PARAM = /[?&#](token|code|key|secret|t|stytch_token_type|to|u|r|redirect|callback|next)=/i
@@ -161,9 +166,12 @@ export function extractActionLink(text?: string, html?: string, from?: string): 
     consider(m[0], textPart.slice(Math.max(0, at - 60), at))
   }
 
-  // No text part (or nothing matched): the link's own label says what it does.
+  // No text part (or nothing matched): the link's own label says what it does. A short label is a
+  // button; a long one belongs to an anchor wrapping half the layout, whose words ("confirm",
+  // "verify" in the body copy) say nothing about where *this* link goes - fall back to alt text.
   for (const m of (html || '').matchAll(ANCHOR)) {
-    consider(m[1], stripTags(m[2]))
+    const text = stripTags(m[2])
+    consider(m[1], text.length <= 80 ? text : altText(m[2]))
   }
 
   // Last: URLs written out as visible text, for mail where the button's href is just "#".

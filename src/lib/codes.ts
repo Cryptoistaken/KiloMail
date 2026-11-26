@@ -64,7 +64,7 @@ function isYearish(s: string, at: number, token: string): boolean {
     || /^\s*,?\s*\d{1,2}:\d{2}/.test(after)    // 2026, 08:44
 }
 
-function pick(s: string): string | null {
+function pick(s: string, from = 0): string | null {
   // Grouped digits like 123-456 - but only when the group actually contains a digit,
   // otherwise "one-time" (from "one-time passcode") looks like a code.
   const grouped = s.match(/\b([A-Za-z0-9]{2,5}(?:-[A-Za-z0-9]{2,5})+)\b/)
@@ -92,7 +92,10 @@ function pick(s: string): string | null {
     if (isYearish(s, m.index ?? 0, token)) continue
 
     if (hasDigit) return token
-    if (!lettersOnly) lettersOnly = token
+    // A word in capitals is only a code when it sits right next to the keyword ("your code is
+    // KQZX"). Far away it is a company suffix: "Mystery Discount Code is Inside … Bright Global
+    // FZCO, Building A1, Dubai" is not a code.
+    if ((m.index ?? 0) - from <= 40) { if (!lettersOnly) lettersOnly = token }
   }
   return lettersOnly
 }
@@ -117,7 +120,8 @@ export function extractCode(text?: string, html?: string): string | null {
   // process. 849515" puts the code 45+ characters after the word it belongs to.
   const near = new RegExp(KEYWORD.source + '[\\s\\S]{0,140}', 'gi')
   for (const w of hay.matchAll(near)) {
-    const c = pick(w[0])
+    const kw = w[0].match(KEYWORD)?.[0]?.length ?? 0
+    const c = pick(w[0], kw)
     if (c) return c
   }
 
@@ -141,7 +145,7 @@ export function extractCode(text?: string, html?: string): string | null {
 export function subjectCode(subject?: string): string | null {
   const s = scrub(subject || '').trim()
   const near = s.match(new RegExp(KEYWORD.source + '[\\s\\S]{0,40}', 'i'))
-  const c = near ? pick(near[0]) : null
+  const c = near ? pick(near[0], near[0].match(KEYWORD)?.[0]?.length ?? 0) : null
   if (c) return c
 
   // The far more common subject shape puts the code first: "581447 is your verification code".
